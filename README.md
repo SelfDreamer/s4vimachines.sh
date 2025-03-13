@@ -13,3 +13,11 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 - Listado de máquinas por sistema operativo y plataforma
 - Listado de máquinas por la técnica usada en los writeups 
 - Obtener writeups, abrirlos en un navegador y descargar el writeup
+
+> [!IMPORTANT]
+> Antes de ejecutar el script, por favor descargar las dependencias necesarias para el proyecto.
+
+```bash
+sudo apt install -y nodejs js-beautify bc moreutils
+
+```
