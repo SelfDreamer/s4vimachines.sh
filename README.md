@@ -1,1 +1,3 @@
-# s4vimachines.sh
+### S4vimachines
+
+## ¿Qué es S4vimachines.sh?
