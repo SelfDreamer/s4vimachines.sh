@@ -85,7 +85,7 @@ function helpPanel(){
 function searchMachine(){
   machineName="$1"
   if ! cat $PATH_ARCHIVE | grep -i "name: $machineName" &>/dev/null; then
-    echo -e "${bright_red}[!] Error fatal: Máquina no encontrada \"$machineName\"${end}"
+    echo -e "${bright_red}\n[!] Error fatal: Máquina no encontrada ${end}${bg_bright_red}\"$machineName\"\n${end}"
     exit 1
   fi
 
@@ -196,12 +196,12 @@ searchOsSystem(){
   done
  
   [[ $verbose_mode == true ]] && echo -e "${bright_magenta}[+]${end} ${bright_white}Mostrando máquinas cuyo sistema operativo es:${end} ${bright_cyan}$osSystem${end}\n"
-
+  
   echo -e "${bright_yellow}[+]${end} ${bright_white}Máquinas de la plataforma VulnHub: ${end}\n"
-  /bin/cat $vulnhub_results | column; echo
-
-  echo -e "${bright_blue}[+]${end} ${bright_white}Máquinas de HackTheBox: ${end}\n"
-  /bin/cat $htb_results | column
+  echo; /bin/cat $vulnhub_results | column 
+  
+  echo -e "\n${bright_blue}[+]${end} ${bright_white}Máquinas de HackTheBox: ${end}\n"
+  echo; /bin/cat $htb_results | column
   rm $htb_results $vulnhub_results
 }
 
@@ -264,7 +264,21 @@ function updatefiles(){
   fi
 }
 
-while getopts 'w:o:b:d:i:m:huvyx' arg; do
+
+function Get_cert(){
+    certificate="$1"
+    output=$(echo "./addFuncs/getCertificates.sh" "$certificate" | bash)  # Captura la salida del script
+
+    if [[ -z "$output" ]]; then  # Verifica si la salida no está vacía
+      echo -e "\n${bright_red}[!] No se encontraron matches: $certificate${end}"
+      return 1
+    fi
+  
+    echo -e "\n${bright_blue}[+]${end} ${bright_white}Listando máquinas que dispongan de los certificados ${bright_cyan}$certificate${bright_white}.${end}\n"
+    echo "./addFuncs/getCertificates.sh ""$certificate" | bash
+}
+
+while getopts 'w:o:b:d:i:m:c:huvyx' arg; do
   case $arg in
     x) exclude_banner=true;;
     v) verbose_mode=true;;
@@ -276,6 +290,7 @@ while getopts 'w:o:b:d:i:m:huvyx' arg; do
     d) difficulty=$OPTARG; let parameter_counter+=4;;
     o) osSystem=$OPTARG; let parameter_counter+=5;;
     w) writeup=$OPTARG; let parameter_counter+=6;;
+    c) certificate="$OPTARG"; let parameter_counter+=7;;
     h) help=true;;
   esac
 done
@@ -293,6 +308,8 @@ elif [[ $parameter_counter -eq 5 ]]; then
   searchOsSystem "$osSystem"
 elif [[ $parameter_counter -eq 6 ]]; then
   showLink "$writeup"
+elif [[ "$parameter_counter" -eq 7 ]]; then
+  Get_cert "$certificate"
 else
   helpPanel
 fi
