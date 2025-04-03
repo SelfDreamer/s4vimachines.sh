@@ -7,9 +7,10 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 
 ---
 
+## ⚠️ Antes de instalar dependencias y demas importante que actualizes el sistema
 
 <details>
-  <summary><b>  ⚠️ Antes de instalar dependencias y demas importante que actualizes el sistema</b></summary>
+  <summary><b>Actualización</b></summary>
 
   ### Debian
   
@@ -17,7 +18,8 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
   sudo apt update && sudo apt upgrade -y # Para distribuciones basadas en debian
   sudo apt update && sudo parrot-upgrade -y # Para el delicado de Parrot
   ```
-  
+
+  ### Arch
   ```bash
   sudo pacman -Syu --noconfirm   # Usando pacman (gestor oficial)
   sudo paru -Syu --noconfirm     # Usando paru (AUR helper basado en pacman)
