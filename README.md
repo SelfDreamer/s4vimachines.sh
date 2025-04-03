@@ -50,6 +50,7 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 
 </details>
 
+```
 ## Modo de uso: 
 `/opt/s4vimachines.sh/s4vimachines.sh` [PARAMETROS] [ARGUMENTOS]
 
@@ -91,5 +92,4 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
   - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -x`
 - `-a(all)`: Listar todas las máquinas existentes.
   - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -a`
-
-
+```
