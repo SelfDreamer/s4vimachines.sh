@@ -7,12 +7,31 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 
 ---
 
+
+<details>
+  <summary><b>  ⚠️ Antes de instalar dependencias y demas importante que actualizes el sistema</b></summary>
+
+  ### Debian
+  
+  ```bash
+  sudo apt update && sudo apt upgrade -y # Para distribuciones basadas en debian
+  sudo apt update && sudo parrot-upgrade -y # Para el delicado de Parrot
+  ```
+  
+  ```bash
+  sudo pacman -Syu --noconfirm   # Usando pacman (gestor oficial)
+  sudo paru -Syu --noconfirm     # Usando paru (AUR helper basado en pacman)
+  sudo yay -Syu --noconfirm      # Usando yay (otro AUR helper basado en pacman)
+  ```
+
+
+</details>  
+
 <details>
   <summary><b>Dependencias</b></summary>
 
   ### Debian
   
-  ⚠️ Actualiza el sistema
   ```bash
   sudo apt update && sudo apt upgrade -y # Para distribuciones basadas en debian
   sudo apt update && sudo parrot-upgrade -y # Para el delicado de Parrot
@@ -20,7 +39,6 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 
   ### Arch
   
-  ⚠️ Actualiza el sistema
   ```bash
   sudo pacman -Syu --noconfirm   # Usando pacman (gestor oficial)
   sudo paru -Syu --noconfirm     # Usando paru (AUR helper basado en pacman)
@@ -31,7 +49,3 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 </details>
 
 
-```bash
-sudo apt install -y nodejs js-beautify bc moreutils
-
-```
