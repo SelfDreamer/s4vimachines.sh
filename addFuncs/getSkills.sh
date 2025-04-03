@@ -1,8 +1,5 @@
 #!/bin/bash
-if [ $# -eq 0 ]; then
-    echo "Uso: $0 <certificación1> [<certificación2> ...]"
-    exit 1
-fi
+
 source Colors.sh
 
 # Hacer las comparaciones insensibles a mayúsculas y minúsculas
