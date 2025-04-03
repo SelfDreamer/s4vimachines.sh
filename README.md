@@ -51,9 +51,15 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 </details>
 
 ```
-## Modo de uso: 
-`/opt/s4vimachines.sh/s4vimachines.sh` [PARAMETROS] [ARGUMENTOS]
 
+### 🔍 Uso
+```bash
+/opt/s4vimachines.sh/s4vimachines.sh [PARAMETROS] [ARGUMENTOS]
+```
+
+### Opciones disponibles:
+
+```
 ### -h(help): Mostrar el manual de ayuda.
 
 ### Actualizaciones y dependencias
@@ -76,8 +82,12 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
   - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -p 'HackTheBox'`
 - `-c(certificate)`: Listar todas las máquinas que dispongan de uno o más certificados
   - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -c 'OSCP OSWE OSEP'`
+```
+
+
 
 ### Extras
+```
 - `-v(verbose)`: Activar el modo verbose
   - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -u -v`
 - `-y(yes)`: Confirmar cada acción que dependa de una confirmación de usuario
