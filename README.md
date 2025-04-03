@@ -50,4 +50,46 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 
 </details>
 
+## Modo de uso: 
+`/opt/s4vimachines.sh/s4vimachines.sh` [PARAMETROS] [ARGUMENTOS]
+
+### -h(help): Mostrar el manual de ayuda.
+
+### Actualizaciones y dependencias
+- `-u(update)`: Actualizar dependencias
+
+### Listar todas las máquinas.
+- `-m(machine)`: Mostrar las propiedades de una máquina.
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -m 'Multimaster'`
+- `-i(ip_addr)`: Mostrar máquinas por la dirección IP.
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -i '10.10.10.179'`
+- `-d(difficulty)`: Mostrar máquinas por una dificultad dada.
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -d 'Insane'`
+- `-o(osSystem)`: Mostrar máquinas por un sistema operativo dado.
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -o 'Windows'`
+- `-w(writeup)`: Mostrar el enlace a la resolución de una máquina
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -w 'Multimaster'`
+- `-s(skill)`: Listar máquinas por skill
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -s 'SQLI'`
+- `-p(platform)`: Listar todas las máquinas de una plataforma
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -p 'HackTheBox'`
+- `-c(certificate)`: Listar todas las máquinas que dispongan de uno o más certificados
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -c 'OSCP OSWE OSEP'`
+
+### Extras
+- `-v(verbose)`: Activar el modo verbose
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -u -v`
+- `-y(yes)`: Confirmar cada acción que dependa de una confirmación de usuario
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -u -y`
+- `-r(random)`: Modo de elección aleatorio. El script elegirá una máquina al azar por ti.
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -r`
+- `-t(translate)`: Traducir el output a un idioma específico.
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -m 'Tentacle' -t 'es'`
+- `-b(browser)`: Abrir el writeup de una máquina, en un navegador específico.
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -w 'Tentacle' -b ''` (Navegador por default: firefox)
+- `-x(exclude banner)`: No mostrar el banner en el panel de ayuda.
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -x`
+- `-a(all)`: Listar todas las máquinas existentes.
+  - **Ejemplo**: `/opt/s4vimachines.sh/s4vimachines.sh -a`
+
 
