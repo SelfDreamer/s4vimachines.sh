@@ -466,7 +466,7 @@ function searchOsDiff(){
 }
 
 
-while getopts 'w:o:b:d:i:m:c:huvyxrp:t:s:aA:' arg; do
+while getopts ':w:o:b:d:i:m:c:huvyxrp:t:s:aA:' arg; do
   case $arg in
     x) exclude_banner=true;;
     v) verbose_mode=true;;
@@ -474,18 +474,19 @@ while getopts 'w:o:b:d:i:m:c:huvyxrp:t:s:aA:' arg; do
     m) machineName=$OPTARG; ((parameter_counter+=1));;
     t) language="$OPTARG"; show_output_translate=true;;
     b) browser="${OPTARG:-firefox}"; open_browser=true;[[ "$browser" == 'default' ]] && browser='firefox';;
-    u) let parameter_counter+=2;;
-    i) ip_addr=$OPTARG; let parameter_counter+=3;;
-    d) difficulty=$OPTARG; let parameter_counter+=4; let target_difficulty+=1;;
-    o) osSystem=$OPTARG; let parameter_counter+=5; let target_os+=1;;
-    w) writeup=$OPTARG; let parameter_counter+=6;;
-    c) certificate="$OPTARG"; let parameter_counter+=7;;
+    u) ((parameter_counter+=2));;
+    i) ip_addr=$OPTARG; ((parameter_counter+=3));;
+    d) difficulty=$OPTARG; ((parameter_counter+=4)); ((target_difficulty+=1));;
+    o) osSystem=$OPTARG; ((parameter_counter+=5)); ((target_os+=1));;
+    w) writeup=$OPTARG; ((parameter_counter+=6));;
+    c) certificate="$OPTARG"; ((parameter_counter+=7));;
     r) random_machine;;
-    p) platform="$OPTARG"; let parameter_counter+=8;;
-    s) skill="$OPTARG"; let parameter_counter+=9;;
-    a) let parameter_counter+=10;;
-    A) objects="$OPTARG"; let parameter_counter+=11;;
+    p) platform="$OPTARG"; ((parameter_counter+=8));;
+    s) skill="$OPTARG"; ((parameter_counter+=9));;
+    a) ((parameter_counter+=10));;
+    A) objects="$OPTARG"; ((parameter_counter+=11));;
     h) help=true;;
+    \?) echo -e "\n${bright_red}[!]${bright_white} Parametro no valido ${bright_yellow}-$OPTARG${end}"; helpPanel; exit 1;;
   esac
 done
 
