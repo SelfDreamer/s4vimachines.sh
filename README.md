@@ -50,9 +50,9 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 
 </details>
 
-```
 
 ### 🔍 Uso
+
 ```bash
 /opt/s4vimachines.sh/s4vimachines.sh [PARAMETROS] [ARGUMENTOS]
 ```
