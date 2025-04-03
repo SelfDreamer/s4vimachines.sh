@@ -10,16 +10,23 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 <details>
   <summary><b>Dependencias</b></summary>
 
-  <!-- Aquí va tu contenido en Markdown -->
   ### Debian
-  - Instala el paquete X
-  - Habilita el servicio Y
-  - Configura Z
+  
+  ⚠️ Actualiza el sistema
+  ```bash
+  sudo apt update && sudo apt upgrade -y # Para distribuciones basadas en debian
+  sudo apt update && sudo parrot-upgrade -y # Para el delicado de Parrot
+  ```
 
   ### Arch
-  - Instala el paquete A
-  - Habilita el servicio B
-  - Configura C
+  
+  ⚠️ Actualiza el sistema
+  ```bash
+  sudo pacman -Syu --noconfirm   # Usando pacman (gestor oficial)
+  sudo paru -Syu --noconfirm     # Usando paru (AUR helper basado en pacman)
+  sudo yay -Syu --noconfirm      # Usando yay (otro AUR helper basado en pacman)
+  ```
+
 
 </details>
 
