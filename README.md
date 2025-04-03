@@ -8,33 +8,21 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 ---
 
 <details>
-  <summary><b>1. Install Required Dependencies and Enable Services</b></summary>
+  <summary><b>Dependencias</b></summary>
 
-  <details>
-    <summary><b>Dependencias</b></summary>
-    
-    <details>
-      <summary><b>Debian</b></summary>
-      <p>Instrucciones para Debian:</p>
-      <ul>
-        <li>Instala el paquete X</li>
-        <li>Habilita el servicio Y</li>
-        <li>Configura Z</li>
-      </ul>
-    </details>
+  <!-- Aquí va tu contenido en Markdown -->
+  ### Debian
+  - Instala el paquete X
+  - Habilita el servicio Y
+  - Configura Z
 
-    <details>
-      <summary><b>Arch</b></summary>
-      <p>Instrucciones para Arch:</p>
-      <ul>
-        <li>Instala el paquete A</li>
-        <li>Habilita el servicio B</li>
-        <li>Configura C</li>
-      </ul>
-    </details>
+  ### Arch
+  - Instala el paquete A
+  - Habilita el servicio B
+  - Configura C
 
-  </details>
 </details>
+
 
 ```bash
 sudo apt install -y nodejs js-beautify bc moreutils
