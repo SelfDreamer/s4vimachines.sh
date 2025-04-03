@@ -7,7 +7,7 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
 
 ---
 
-## ⚠️ Antes de instalar dependencias y demas importante que actualizes el sistema
+#### ⚠️ Antes de instalar dependencias y demas importante que actualizes el sistema
 
 ---
 
