@@ -35,18 +35,16 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
   ### Debian
   
   ```bash
-  sudo apt update && sudo apt upgrade -y # Para distribuciones basadas en debian
-  sudo apt update && sudo parrot-upgrade -y # Para el delicado de Parrot
+  sudo apt install coreutils util-linux npm nodejs bc moreutils translate-shell -y
+  sudo apt install node-js-beautify -y 
   ```
 
   ### Arch
   
   ```bash
-  sudo pacman -Syu --noconfirm   # Usando pacman (gestor oficial)
-  sudo paru -Syu --noconfirm     # Usando paru (AUR helper basado en pacman)
-  sudo yay -Syu --noconfirm      # Usando yay (otro AUR helper basado en pacman)
+  sudo pacman -S coreutils npm nodejs bc moreutils translate-shell --noconfirm
+  sudo npm install -g js-beautify 
   ```
-
 
 </details>
 
