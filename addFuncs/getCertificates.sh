@@ -4,6 +4,8 @@ source Colors.sh
 # Hacer las comparaciones insensibles a mayúsculas y minúsculas
 shopt -s nocasematch
 
+[[ -z "$1" ]] && echo "hEmos entrado"
+
 # Archivos temporales
 htb_file="/tmp/cert_htb"
 vuln_file="/tmp/cert_vuln"
@@ -89,5 +91,12 @@ fi
 #        echo ""
 #    fi
 #done
+> /tmp/all_machines.txt
+
+for archivo in /tmp/cert_*; do
+  while read line; do 
+    echo "$line"  >> /tmp/all_machines.txt
+  done < $archivo
+done
 
 rm -f /tmp/cert_*

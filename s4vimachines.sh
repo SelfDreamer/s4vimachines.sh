@@ -93,6 +93,9 @@ function helpPanel(){
   echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -x${end}\n"
   echo -e "\t${bright_white}-a(all): Listar todas las máquinas existentes.${end}"
   echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -a${end}\n"
+  echo -e "\t${bright_white}-A(Advanced Search): Realizar una busqueda avanzada, introduces dentro de comillas, tu input.${end}"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -A ${bright_white}'Unicode Sqli Insane windows oscp oswe'${end}\n"
+
 
 }
 
@@ -107,15 +110,12 @@ function searchMachine(){
   }
 
   machineName="$1"
-  if [[ "$help" == true ]]; then
-    helpMachine
-  fi
+  [[ "$help" == true ]] && helpMachine
 
   if ! cat $PATH_ARCHIVE | grep -i "name: $machineName" &>/dev/null; then
     echo -e "${bright_red}\n[!] Error fatal: Máquina no encontrada ${end}${bg_bright_red}\"$machineName\"\n${end}"
     exit 1
   fi
-
  
   if [[ $show_output_translate == false ]]; then
   output=$(cat $PATH_ARCHIVE| grep -i "name: $machineName" -A 6 -B 1  | sed 's/^ *//g'; echo)
@@ -145,23 +145,44 @@ function searchMachine(){
 
     echo -e "\n${bright_cyan}[+]${end} ${bright_white}Maquina encontrada:${end} ${bright_magenta}$machineName${end}${bright_white}, listando sus propiedades:${end}"
     echo; /bin/cat $results | sed 's/--.*//'; rm $results
+    return 0
       
   fi
 }
 
-function searchForIp(){
-  ip_addr="$1"
-  if ! cat $PATH_ARCHIVE | grep -oP "ip: $ip_addr" &>/dev/null; then
-    echo -e "\n${bright_red}[!] Dirección IP no encontrada en la base de datos.\n${end}"
-    exit 1
-  fi
-  
-  output=$(cat $PATH_ARCHIVE | grep "ip: $ip_addr" -A 1 -B 6  | sed 's/^ *//')
-  machineName=$(cat $PATH_ARCHIVE | grep "ip: $ip_addr" -A 1 -B 6  | sed 's/^ *//' | grep "name: *" | sed 's/name://' | sed 's/^ *//')
-  
-  echo -e "\n${bright_green}[+]${end} ${bright_white}La dirección IP: ${bright_yellow}$ip_addr${end} ${bright_white}le pertenece a la máquina${bright_blue} $machineName${end}" 
-  [[ $confirm_act == true ]] && searchMachine "$machineName"
-  exit 0
+function searchForIp() {
+    ip_addr="$1"
+
+    matches=$(grep -B 6 -A 1 "ip: $ip_addr" "$PATH_ARCHIVE")
+    
+    if [[ -z "$matches" ]]; then
+        echo -e "\n${bright_red}[!] Dirección IP no encontrada en la base de datos: $ip_addr.\n${end}"
+        return 1
+    fi
+
+    # Extraer nombres de máquinas
+    machineNames=$(echo "$matches" | grep -oP 'name: \K.*')
+
+    # Contar cuántas máquinas coinciden
+    amount_machines=$(echo "$machineNames" | wc -l)
+
+    # Si solo hay una coincidencia
+    if [[ "$amount_machines" -eq 1 ]]; then
+        echo -e "\n${bright_green}[+]${end} ${bright_white}La dirección IP: ${bright_yellow}$ip_addr${end} pertenece a la máquina ${bright_blue}$machineNames${end}"
+        [[ "$confirm_act" == true ]] && searchMachine "$machineNames"
+        return 0
+    fi
+
+    # Si hay múltiples coincidencias
+    echo -e "\n${bright_green}[+]${end} ${bright_white}Matches encontrados para la IP: ${bright_yellow}$ip_addr${end}"
+    echo; tput setaf 4; echo "$machineNames" | column; echo
+
+    # Si la confirmación está activada, recorrer las máquinas
+    if [[ "$confirm_act" == true ]]; then
+        while IFS= read -r machine; do
+            searchMachine "$machine"
+        done <<< "$machineNames"
+    fi
 }
 
 function showAllDifficulty(){
@@ -288,7 +309,7 @@ function updatefiles(){
         echo -e "${bright_white}Valor MD5 del archivo original:${bright_blue} $MD5_ORG"
         echo -e "${bright_white}Valor MD5 del archivo temporal a comparar:${bright_blue} $MD5_TEMP"
       fi
-        echo -e "\n${bright_white}No hay actualizaciones disponibles de momento.${end}"
+        echo -e "\n${bright_cyan}[+] ${bright_white}No hay actualizaciones disponibles de momento.${end}"
         rm $TMP_ARCHIVE
     else
       if [[ "$verbose_mode" == true ]]; then
@@ -297,7 +318,8 @@ function updatefiles(){
       fi
 
       if [[ "$confirm_act" == false ]]; then
-        echo -ne "${bright_white}Se detecto una nueva actualización ¿Deseas continuar? (Y/n)${end} " && read -r yes_no
+        echo
+        echo -ne "${bright_cyan}[+]${bright_white} Se detecto una nueva actualización ¿Deseas continuar? (Y/n)${end} " && read -r yes_no
           if [[ ! "$yes_no" =~ ^[SsYy]$ ]] && [[ ! -z "$yes_no" ]]; then          
           echo -e "\n${bright_red}[!] Operación cancelada.${end}"
           exit 1
@@ -312,18 +334,14 @@ function updatefiles(){
 }
 
 
-function Get_cert(){
-    certificate="$1"
-    output=$(echo "./addFuncs/getCertificates.sh" "$certificate" | bash)  # Captura la salida del script
+: '
+Esta función funciona de la siguiente forma.
+Vamos a declarar una variable local, la cual valga 0 y vamos a ir incrementando su valor.
+Mientras que value, valga 0, entonces le sumaremos 1 a value y agarraremos una máquina aleatoria, de todas las que hay.
+Se agarra una máquina aleatoria usando shuf -n 1. Una vez que value valga 100, se revelara nuyestra máquina para jugar.
+Espero me haya dejado entender porque honestamente, a veces pienso que tengo autismo o TDAH. Me cuesta entender las cosas pero me esfuerzo.
 
-    if [[ -z "$output" ]]; then  # Verifica si la salida no está vacía
-      echo -e "\n${bright_red}[!] No se encontraron matches: $certificate${end}"
-      return 1
-    fi
-  
-    echo -e "\n${bright_blue}[+]${end} ${bright_white}Listando máquinas que dispongan de los certificados ${bright_cyan}$certificate${bright_white}.${end}\n"
-    echo "./addFuncs/getCertificates.sh ""$certificate" | bash
-}
+'
 
 function random_machine(){
   tput civis
@@ -364,11 +382,14 @@ function searchPlatform(){
 
   if [[ "$confirm_act" == false ]]; then 
     if [[ "$platform" =~ ^[Hh] ]]; then
+      echo -e "\n${bright_green}[+]${bright_white} Listando máquinas de la plataforma HackTheBox: ${end}"
       tput setaf 2; echo; cat $PATH_ARCHIVE | grep -i "platform: $platform" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
     elif [[ "$platform" =~ ^[Pp] ]]; then
+      echo -e "\n${bright_yellow}[+]${bright_white} Listando máquinas de la plataforma PortSwigger: ${end}"
       tput setaf 3 && tput bold; echo; cat $PATH_ARCHIVE | grep -i "platform: $platform" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
     else
-       tput setaf 2; echo; cat $PATH_ARCHIVE | grep -i "platform: $platform" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo   
+      echo -e "\n${yellow}[+]${bright_white} Listando máquinas de la plataforma VulnHub: ${end}"
+       tput setaf 3; echo; cat $PATH_ARCHIVE | grep -i "platform: $platform" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo   
     fi
   fi
 
@@ -380,9 +401,42 @@ function searchPlatform(){
 
 }
 
+function Get_cert(){
+    certificate="$1"
+    output=$(echo "./addFuncs/getCertificates.sh" "$certificate" | bash)  # Captura la salida del script
+
+   if [[ -z "$certificate" ]]; then
+    echo -e "\n${bright_red}[!] Es necesario introducir una cadena valida.${end}"
+    exit 1
+   fi
+    
+
+    if [[ -z "$output" ]]; then  # Verifica si la salida no está vacía
+      echo -e "\n${bright_red}[!] No se encontraron matches: $certificate${end}"
+      return 1
+    fi
+  
+    
+    echo -e "\n${bright_blue}[+]${end} ${bright_white}Listando máquinas que dispongan de los certificados ${bright_cyan}$certificate${bright_white}.${end}\n"
+    echo "./addFuncs/getCertificates.sh ""$certificate" | bash
+    if [[ "$confirm_act" == false ]]; then
+      rm /tmp/all_machines.txt 2>/dev/null
+    else
+      while read machine; do
+        searchMachine "$machine"
+      done < /tmp/all_machines.txt
+      rm /tmp/all_machines.txt 2>/dev/null
+    fi
+}
+
 function searchSkill(){
   skill="$1"
   output=$(echo "./addFuncs/getSkills.sh" "$skill" | bash)  # Captura la salida del script
+  
+  if [[ -z "$skill" ]]; then
+    echo -e "\n${bright_red}[!] Es necesario introducir una cadena valida.${end}"
+    exit 1
+  fi
 
   if [[ -z "$output" ]]; then  # Verifica si la salida no está vacía
     echo -e "\n${bright_red}[!] No se encontraron matches: $skill${end}"
@@ -391,6 +445,14 @@ function searchSkill(){
 
   echo -e "\n${bright_blue}[+]${end} ${bright_white}Listando máquinas que dispongan de skill ${bright_cyan}$skill${bright_white}.${end}\n"
   echo "./addFuncs/getSkills.sh ""$skill" | bash
+  if [[ "$confirm_act" == false ]]; then
+    rm /tmp/all_machines.txt 2>/dev/null
+  else
+      while read machine; do
+        searchMachine "$machine"
+      done < /tmp/all_machines.txt
+      rm /tmp/all_machines.txt 2>/dev/null
+  fi
 
 }
 
@@ -424,14 +486,45 @@ function get_allMachines(){
 
 }
 
+
+function showDetailsMachine(){
+  machineName="$1"
+
+  output=$(cat $PATH_ARCHIVE| grep -i "name: ${machineName}$" -A 6 -B 1  | sed 's/^ *//g')
+
+    echo "$output" | while IFS= read -r line; do
+      first_column=$(echo $line | awk '{print $1}')
+      rest_columns=$(echo $line | cut -d' ' -f2-)
+      if [[ -n "$rest_columns" ]]; then
+        echo -e "${bright_yellow}${first_column}${end} ${bright_white}${rest_columns}${end}" >> $results
+      fi
+
+    done
+
+    echo -e "\n${bright_cyan}[+]${end} ${bright_white}Maquina encontrada:${end} ${bright_magenta}$machineName${end}${bright_white}, listando sus propiedades:${end}"
+    echo; /bin/cat $results | sed 's/--.*//'; rm $results
+
+}
+
 function advanced_search(){
  : '
  Aún se esta trabajando en esta función, pero una vez terminada sera una locura.
  '
   objects="$1"
-  echo -e "\n[+] Realizando la busqueda avanzada: $objects..."
+  echo -e "\n${bright_green}[+]${bright_white} Realizando la busqueda avanzada:${bright_cyan} \"$objects\"${bright_white}...${end}"
 
-  echo -e "\n[*] Esta función esta en proceso "
+  echo "./addFuncs/advanced_search.sh" "$objects" | bash
+  
+  if [[ "$confirm_act" == true ]]; then
+    while IFS= read -r machine; do
+      showDetailsMachine "$machine"
+    done < /tmp/machine_results
+    rm /tmp/machine_results 2>/dev/null
+    return 0
+  fi
+
+  rm /tmp/machine_results 2>/dev/null
+  return 0
 }
 
 function searchOsDiff(){

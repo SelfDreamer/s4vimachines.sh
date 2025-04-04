@@ -2,6 +2,8 @@
 
 source Colors.sh
 
+[[ -z "$1" ]] && exit 1
+
 # Hacer las comparaciones insensibles a mayúsculas y minúsculas
 shopt -s nocasematch
 
@@ -78,6 +80,13 @@ if [[ -s "$swigger_file" ]]; then
   tput setaf 1; /bin/cat $swigger_file | column; tput sgr0; echo
 fi
 
+> /tmp/all_machines.txt
+
+for archivo in /tmp/skill_*; do
+  while read line; do 
+    echo "$line"  >> /tmp/all_machines.txt
+  done < $archivo
+done
 
 # Mostrar los resultados en formato columnar
 #for file in "$htb_file" "$vuln_file" "$swigger_file"; do
@@ -88,4 +97,4 @@ fi
 #        echo ""
 #    fi
 #done
-rm -f /tmp/cert_*
+rm -f /tmp/skill_*

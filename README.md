@@ -115,4 +115,6 @@ Listar todas las máquinas.
 
 -a(all): Listar todas las máquinas existentes.
   Ejemplo: s4vimachines.sh -a
+-A(Advanced Search): Realizar una busqueda avanzada, introduces dentro de comillas tu input.
+  Ejemplo: /s4vimachines.sh -A 'Unicode Sqli Insane windows oscp oswe'
 ```
