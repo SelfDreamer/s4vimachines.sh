@@ -3,7 +3,7 @@ source Colors.sh
 # Hacer las comparaciones insensibles a mayúsculas y minúsculas
 shopt -s nocasematch
 
-[[ -z "$1" ]] && echo "hEmos entrado"
+[[ -z "$1" ]] && echo "${bright_red}[!] Es necesario que introduzcas al menos un argumento${end}"
 
 # Archivo temporal para resultados
 result_file="/tmp/machine_results"
@@ -44,11 +44,16 @@ done < /tmp/bundle.js
 
 total_machines=$(wc -l "$result_file" | awk '{print $1}')
 
+if [[ "$total_machines" -ge 1 ]]; then
   echo -e "${bright_cyan}[+]${bright_white} Máquinas encontradas:${bright_magenta} $total_machines${end}"
   echo
   tput setaf 6  # Color cian para los resultados
   cat "$result_file" | column
   tput sgr0     # Resetear color
   echo
+else
+  echo -e "\n${bright_red}[!] No se encontraron los siguientes matches: $*${end}\n"
+  exit 1
+fi
 
 #rm -f "$result_file"
