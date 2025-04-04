@@ -20,6 +20,7 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
   sudo apt update && sudo apt upgrade -y # Para distribuciones basadas en debian
   sudo apt update && sudo parrot-upgrade -y # Para el delicado de Parrot
   ```
+---
 
   ### Arch
   ```bash
@@ -27,7 +28,7 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
   sudo paru -Syu --noconfirm     # Usando paru (AUR helper basado en pacman)
   sudo yay -Syu --noconfirm      # Usando yay (otro AUR helper basado en pacman)
   ```
-
+---
 
 </details>  
 
@@ -40,6 +41,7 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
   sudo apt install coreutils util-linux npm nodejs bc moreutils translate-shell -y
   sudo apt install node-js-beautify -y 
   ```
+---
 
   ### Arch
   
@@ -47,6 +49,8 @@ Este es un cliente de terminal, que se encarga de extraer información acerca de
   sudo pacman -S coreutils npm nodejs bc moreutils translate-shell --noconfirm
   sudo npm install -g js-beautify 
   ```
+
+---
 
 </details>
 
