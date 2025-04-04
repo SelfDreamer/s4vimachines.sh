@@ -286,6 +286,7 @@ function updatefiles(){
       echo -e "\n${bright_white}Descargando archivo necesario de: ${bright_blue}$url\n${bright_white}Destino: ${bright_cyan}$PATH_ARCHIVE${bright_white}\nPeso estimado: ${bright_yellow}$size_file${end}"
       curl -s -X GET $url | js-beautify > $PATH_ARCHIVE
       /bin/cat $PATH_ARCHIVE | sed 's|\\n| |g' | tr -d "'" | tr -d '"' | tr -d ',' | sponge $PATH_ARCHIVE
+      /bin/cat $PATH_ARCHIVE | tr -d '{}[]'  | sed 's/^ *//' | sponge $PATH_ARCHIVE
       echo -e "\n${bright_green}[+]${end}${bright_white} Archivo descargado correctamente.\n${end}"
       exit 0
   else
@@ -300,6 +301,7 @@ function updatefiles(){
       fi 
     curl -s -X GET $url | js-beautify > $TMP_ARCHIVE
     /bin/cat $TMP_ARCHIVE | sed 's|\\n| |g' | tr -d "'" | tr -d '"' | tr -d ',' | sponge $TMP_ARCHIVE
+    /bin/cat $TMP_ARCHIVE | tr -d '{}[]'  | sed 's/^ *//' | sponge $TMP_ARCHIVE
 
     MD5_ORG=$(md5sum $PATH_ARCHIVE | awk '{print $1}') 
     MD5_TEMP=$(md5sum $TMP_ARCHIVE | awk '{print $1}')
@@ -511,10 +513,11 @@ function advanced_search(){
  Aún se esta trabajando en esta función, pero una vez terminada sera una locura.
  '
   objects="$1"
+#  output=$(echo "./addFuncs/advanced_search.sh " "$objects" | bash)
   echo -e "\n${bright_green}[+]${bright_white} Realizando la busqueda avanzada:${bright_cyan} \"$objects\"${bright_white}...${end}"
 
   echo "./addFuncs/advanced_search.sh" "$objects" | bash
-  
+
   if [[ "$confirm_act" == true ]]; then
     while IFS= read -r machine; do
       showDetailsMachine "$machine"

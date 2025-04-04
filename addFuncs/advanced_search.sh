@@ -44,13 +44,11 @@ done < /tmp/bundle.js
 
 total_machines=$(wc -l "$result_file" | awk '{print $1}')
 
-if [[ $total_machines -ge 1 ]]; then
   echo -e "${bright_cyan}[+]${bright_white} Máquinas encontradas:${bright_magenta} $total_machines${end}"
   echo
   tput setaf 6  # Color cian para los resultados
   cat "$result_file" | column
   tput sgr0     # Resetear color
   echo
-fi
 
 #rm -f "$result_file"
