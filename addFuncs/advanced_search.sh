@@ -3,7 +3,7 @@ source Colors.sh
 # Hacer las comparaciones insensibles a mayúsculas y minúsculas
 shopt -s nocasematch
 
-[[ -z "$1" ]] && echo "${bright_red}[!] Es necesario que introduzcas al menos un argumento${end}"
+[[ -z "$1" ]] && echo -e "\n\n${bright_red}[!] Es necesario que introduzcas al menos un argumento${end}\n" && exit 1
 
 # Archivo temporal para resultados
 result_file="/tmp/machine_results"
@@ -12,15 +12,30 @@ result_file="/tmp/machine_results"
 # Variables para almacenar datos
 machine_name=""
 machine_data=""
+skip_fields=0  # Bandera para saltar campos
 
 while IFS= read -r line; do
-    # Detectar nombre de la máquina
-    if [[ $line =~ name:\ (.*) ]]; then
-        machine_name="${BASH_REMATCH[1]}"
+    # Si la línea comienza con 'ip:' o 'video:', activamos el flag para saltar
+    if [[ $line =~ ^(ip|video): ]]; then
+        skip_fields=1
+        continue
     fi
     
-    # Acumular todos los datos de la máquina para buscar en ellos
-    machine_data+="$line"$'\n'
+    # Si encontramos una línea vacía, reseteamos el flag
+    if [[ -z "$line" ]]; then
+        skip_fields=0
+    fi
+    
+    # Solo procesamos líneas que no sean de los campos a ignorar
+    if [[ $skip_fields -eq 0 ]]; then
+        # Detectar nombre de la máquina
+        if [[ $line =~ name:\ (.*) ]]; then
+            machine_name="${BASH_REMATCH[1]}"
+        fi
+        
+        # Acumular datos relevantes (excluyendo ip y video)
+        machine_data+="$line"$'\n'
+    fi
     
     # Cuando encontramos una línea vacía, procesamos la máquina anterior
     if [[ -z "$line" ]]; then
@@ -31,7 +46,7 @@ while IFS= read -r line; do
             fi
         done
         
-        # Si todas las palabras buscadas están en los datos de la máquina
+        # Si todas las palabras buscadas están en los datos filtrados
         if [[ $match_count -eq $# ]]; then
             echo "$machine_name" >> "$result_file"
         fi

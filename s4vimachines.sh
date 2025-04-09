@@ -112,13 +112,13 @@ function searchMachine(){
   machineName="$1"
   [[ "$help" == true ]] && helpMachine
 
-  if ! cat $PATH_ARCHIVE | grep -i "name: $machineName" &>/dev/null; then
+  if ! cat $PATH_ARCHIVE | grep -i "name: $machineName$" &>/dev/null; then
     echo -e "${bright_red}\n[!] Error fatal: Máquina no encontrada ${end}${bg_bright_red}\"$machineName\"\n${end}"
     exit 1
   fi
  
   if [[ $show_output_translate == false ]]; then
-  output=$(cat $PATH_ARCHIVE| grep -i "name: $machineName" -A 6 -B 1  | sed 's/^ *//g'; echo)
+  output=$(cat $PATH_ARCHIVE| grep -i "name: $machineName$" -A 6 -B 1  | sed 's/^ *//g')
 
     echo "$output" | while IFS= read -r line; do
       first_column=$(echo $line | awk '{print $1}')
@@ -293,7 +293,7 @@ function updatefiles(){
     echo -e "\n${bright_cyan}[+]${bright_white} Estamos en busca de actualizaciones...${end}\n"
 
       if [[ "$confirm_act" == false ]]; then
-        echo -en "${bright_green}[+]${bright_white} El archivo indicado ${bright_black}($PATH_ARCHIVE)${bright_white} ya existe ¿Estas seguro que deseas revisar si hay actualizaciones? (Y/y)${end} " && read -r yes_no
+        echo -en "${bright_green}[+]${bright_white} El archivo indicado ${bright_black}($PATH_ARCHIVE)${bright_white} ya existe ¿Estas seguro que deseas revisar si hay actualizaciones? (Y/n)${end} " && read -r yes_no
         if [[ ! $yes_no =~ ^[Yy] && ! $yes_no =~ ^[Ss] ]]; then
           echo -e "\n${bright_red}[!] Operación cancelada...${end}"
           exit 1
@@ -510,11 +510,18 @@ function showDetailsMachine(){
 
 function advanced_search(){
  : '
- Aún se esta trabajando en esta función, pero una vez terminada sera una locura.
+ Esta función ya se termino amigo por fin
  '
   objects="$1"
+  if [[ "${help}" == true ]]; then
+    echo -e "\n${bright_cyan}[+]${bright_white} Uso $0: ${end}\n"
+    echo -e "\t${bright_yellow}-y${bright_white}(${bright_green}yes${bright_white}) Al realizar una busqueda y esta ser exitosa, se iterara por cada una de las máquinas para listar sus propiedades.${end}"
+     echo -e "\t${bright_yellow}-t${bright_white}(${bright_green}translate${bright_white}) Al realizar una busqueda y esta ser exitosa, se iterara por cada una de las máquinas para listar sus propiedades, pero en un idioma dado.\n${end}"
+   
+    return 0
+  fi
 #  output=$(echo "./addFuncs/advanced_search.sh " "$objects" | bash)
-  echo -e "\n${bright_green}[+]${bright_white} Realizando la busqueda avanzada:${bright_cyan} \"$objects\"${bright_white}...${end}"
+  [[ -z "${objects}" ]] || echo -e "\n${bright_green}[+]${bright_white} Realizando la busqueda avanzada:${bright_cyan} \"$objects\"${end}" 
 
   echo "./addFuncs/advanced_search.sh" "$objects" | bash
 
@@ -576,11 +583,11 @@ while getopts ':w:o:b:d:i:m:c:huvyxrp:t:s:aA:' arg; do
     o) osSystem=$OPTARG; ((parameter_counter+=5)); ((target_os+=1));;
     w) writeup=$OPTARG; ((parameter_counter+=6));;
     c) certificate="$OPTARG"; ((parameter_counter+=7));;
-    r) random_machine;;
     p) platform="$OPTARG"; ((parameter_counter+=8));;
     s) skill="$OPTARG"; ((parameter_counter+=9));;
     a) ((parameter_counter+=10));;
     A) objects="$OPTARG"; ((parameter_counter+=11));;
+    r) ((parameter_counter+=12));;
     h) help=true;;
     \?) echo -e "\n${bright_red}[!]${bright_white} Parametro no valido ${bright_yellow}-$OPTARG${end}"; helpPanel; exit 1;;
   esac
@@ -620,6 +627,8 @@ elif [[ "$parameter_counter" -eq 10 ]]; then
   get_allMachines
 elif [[ "$parameter_counter" -eq 11 ]]; then
   advanced_search "$objects"
+elif [[ "$parameter_counter" -eq 12 ]]; then
+  random_machine
 else
   helpPanel
 fi
