@@ -6,6 +6,7 @@ source Colors.sh
 
 # Hacer las comparaciones insensibles a mayúsculas y minúsculas
 shopt -s nocasematch
+source ../variables/global_variables.sh 2>/dev/null || source variables/global_variables.sh 2>/dev/null
 
 # Archivos temporales
 htb_file="/tmp/skill_htb"
@@ -51,7 +52,7 @@ while IFS= read -r line; do
             esac
         fi
     fi
-done < /tmp/bundle.js
+done < $PATH_ARCHIVE
 get_total(){
   # Eliminar archivos temporales
   local total_htb=$(wc -l $htb_file | awk '{print $1}')

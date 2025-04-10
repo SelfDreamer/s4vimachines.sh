@@ -3,6 +3,7 @@
 source Colors.sh
 # Hacer las comparaciones insensibles a mayúsculas y minúsculas
 shopt -s nocasematch
+source ../variables/global_variables.sh 2>/dev/null || source variables/global_variables.sh 2>/dev/null
 
 [[ -z "$1" ]] && echo "hEmos entrado"
 
@@ -52,7 +53,7 @@ while IFS= read -r line; do
             esac
         fi
     fi
-done < /tmp/bundle.js
+done < $PATH_ARCHIVE
 
 get_total(){
   local total_htb=$(wc -l $htb_file | awk '{print $1}')

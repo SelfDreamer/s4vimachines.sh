@@ -3,6 +3,8 @@ source Colors.sh
 # Hacer las comparaciones insensibles a mayúsculas y minúsculas
 shopt -s nocasematch
 
+source ../variables/global_variables.sh 2>/dev/null || source variables/global_variables.sh 2>/dev/null
+
 [[ -z "$1" ]] && echo -e "\n\n${bright_red}[!] Es necesario que introduzcas al menos un argumento${end}\n" && exit 1
 
 # Archivo temporal para resultados
@@ -55,7 +57,7 @@ while IFS= read -r line; do
         machine_name=""
         machine_data=""
     fi
-done < /tmp/bundle.js
+done < $PATH_ARCHIVE
 
 total_machines=$(wc -l "$result_file" | awk '{print $1}')
 
