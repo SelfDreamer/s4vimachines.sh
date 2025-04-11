@@ -98,8 +98,6 @@ Actualizaciones y dependencias
 
 -a(all): Listar todas las máquinas existentes.
 [Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -a 
-
-
 ```
 
 
