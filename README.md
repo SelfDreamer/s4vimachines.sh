@@ -69,56 +69,58 @@ s4vimachines.sh [PARAMETROS] [ARGUMENTOS]
 Actualizaciones y dependencias
 -u(update): Actualizar dependencias
 
-Listar todas las máquinas.
 -m(machine): Mostrar las propiedades de una máquina.
-  Ejemplo: s4vimachines.sh -m 'Multimaster'
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -m 'Multimaster'
 
 -i(ip_addr): Mostrar máquinas por la dirección IP.
-  Ejemplo: s4vimachines.sh -i '10.10.10.179'
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -i '10.10.10.179'
 
 -d(difficulty): Mostrar máquinas por una dificultad dada.
-  Ejemplo: s4vimachines.sh -d 'Insane'
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -d 'Insane'
 
 -o(osSystem): Mostrar máquinas por un sistema operativo dado.
-  Ejemplo: s4vimachines.sh -o 'Windows'
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -o 'Windows'
 
 -w(writeup): Mostrar el enlace a la resolución de una máquina
-  Ejemplo: s4vimachines.sh -w 'Multimaster'
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -w 'Multimaster'
 
 -s(skill): Listar máquinas por skill
-  Ejemplo: s4vimachines.sh -s 'SQLI'
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -s 'SQLI'
 
 -p(platform): Listar todas las máquinas de una plataforma
-  Ejemplo: s4vimachines.sh -p 'HackTheBox'
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -p 'HackTheBox'
 
--c(certificate): Listar todas las máquinas que dispongan de uno o más certificados
-  Ejemplo: s4vimachines.sh -c 'OSCP OSWE OSEP'
+-c(certificate): Listar todas las máquinas que dispongan de uno o mas certificados
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -c 'OSCP OSWE OSEP'
+
+-A(Advanced Search): Realizar una busqueda avanzada.
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -A 'Unicode Sqli Insane windows oscp oswe'
+
+-a(all): Listar todas las máquinas existentes.
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -a 
+
+
 ```
 
 
 
 ### Extras
 ```
+-r(random): Modo de elección aleatorio. El script elegira una máquina al azar por ti.
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -r
+
 -v(verbose): Activar el modo verbose
-  Ejemplo: s4vimachines.sh -u -v
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -u -v
 
--y(yes): Confirmar cada acción que dependa de una confirmación de usuario
-  Ejemplo: s4vimachines.sh -u -y
+-y(yes): Confirmar cada acción que dependa de una confirmación de usuario (sirve también para iterar por cada máquina)
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -u -y | s4vimachines.sh -A 'CSRF' -y
 
--r(random): Modo de elección aleatorio. El script elegirá una máquina al azar por ti.
-  Ejemplo: s4vimachines.sh -r
+-t(translate): Traducir el output a un idioma especifico.
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -m 'Tentacle' -t 'es'
 
--t(translate): Traducir el output a un idioma específico.
-  Ejemplo: s4vimachines.sh -m 'Tentacle' -t 'es'
+-b(browser): Abrir el writeup de una máquina, en un navegador especifico.
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -w 'Tentacle' -b '' (Navegador por default: firefox)
 
--b(browser): Abrir el writeup de una máquina, en un navegador específico.
-  Ejemplo: s4vimachines.sh -w 'Tentacle' -b '' (Navegador por default: firefox)
-
--x(exclude banner): No mostrar el banner en el panel de ayuda.
-  Ejemplo: s4vimachines.sh -x
-
--a(all): Listar todas las máquinas existentes.
-  Ejemplo: s4vimachines.sh -a
--A(Advanced Search): Realizar una busqueda avanzada, introduces dentro de comillas tu input.
-  Ejemplo: /s4vimachines.sh -A 'Unicode Sqli Insane windows oscp oswe'
+-x(exclude banner): No mostrar el banner en el panel de ayida.
+[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -x 
 ```
