@@ -31,9 +31,9 @@ function banner(){
      %%%%%                   .%%%%%%    
      %%%%%%%%               %%%%%%%%
      %%   %%%%%%%      .%%%%%%%  %%%
-     %%       #%%%%%%%%%%%#      %%%    ${bright_white}$0 - Terminal Client${bright_green}
+     %%       #%%%%%%%%%%%#      %%%    ${bright_white}s4vimachines - (infosec) Terminal Client${bright_green}
      %%           %%%%#          %%%    ${bright_blue}\t\t        by Flick${bright_red} <3${end}${bright_green}
-     %%            %%%           %%%
+     %%            %%%           %%%    ${bright_black}\t\t        this was not copied${end}${bright_green} 
      %%            %%%           %%%
      %%%%%         %%%          %%%%
        %%%%%%%     %%%     %%%%%%.
@@ -43,74 +43,76 @@ function banner(){
 
 }
 
+function getInfo(){
+  echo -ne "${bright_white}Total machines: ${end}"; tput setaf 6; cat $PATH_ARCHIVE | tail -n 6 | grep -oP "\d{1,3}" | xargs | sed 's| |+|g' | bc; echo
+
+  declare -i color=1 
+  cat $PATH_ARCHIVE | tail -n 6 | grep -Pi "totalMachines.*" -A 3 | sed 's/htb/HackTheBox (htb)/' | sed 's/vuln/VulnHub (vuln)/' | sed 's/swigger/PortSwigger (swigger)/' | tail -n3  | sed 's/^ *//g' | while read line; do 
+    ((color+=1)); tput setaf $color; echo "$line" 
+  done
+
+  echo
+}
+
+
 function helpPanel(){
-#  local info=$(echo; cat $PATH_ARCHIVE | tail -n 6 | grep -Pi "totalMachines.*" -A 3 | sed 's/htb/HackTheBox (htb)/' | sed 's/vuln/VulnHub (vuln)/' | sed 's/swigger/PortSwigger (swigger)/' | tail -n3  | sed 's/^ *//'; echo)
-#  local total_machines=$(cat $PATH_ARCHIVE  | grep -i Total -A 4 | grep -oP "\d{1,3}" | xargs | sed 's/ /+/g' | bc)
+  local total_machines=$(cat $PATH_ARCHIVE  | grep -i Total -A 4 | grep -oP "\d{1,3}" | xargs | sed 's/ /+/g' | bc)
     if [[ ! $exclude_banner == true ]]; then
         banner
-#      echo; echo $info | awk '{for(i=1;i<=NF;i++){printf "%s%s", $i, ($i ~ /^[0-9]+$/ ? "\n" : " ")}}'; echo
-#      echo "Máquinas totales: $total_machines"
+        getInfo
 
-  for i in $(seq 1 80); do echo -ne "${bright_red}-"; done; echo -ne "${end}"
+        for i in $(seq 1 80); do echo -ne "${bright_red}-"; done; echo -ne "${end}"
+        echo
     fi
-
     echo -e "\n${bright_white}Modo de uso: [$(realpath $0)] [PARAMETROS] [ARGUMENTOS]${end}"
   echo -e "\t${bright_white}-h(help): Mostrar el manual de ayuda.${end}"
 
   echo -e "\n${bright_white}Actualizaciones y dependencias${end}"
   echo -e "\t${bright_white}-u(update): Actualizar dependencias${end}"
 
-  echo -e "\n${bright_white}Listar todas las máquinas.${end}"
+  echo -e "\n${bright_white}Listar máquinas y/o propiedades.${end}"
   echo -e "\t${bright_white}-m(machine): Mostrar las propiedades de una máquina.${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -m${bright_white} 'Multimaster'${end}\n"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -m 'Multimaster'${end}\n"
   echo -e "\t${bright_white}-i(ip_addr): Mostrar máquinas por la dirección IP.${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -i${bright_white} '10.10.10.179'${end}\n"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -i '10.10.10.179'${end}\n"
   echo -e "\t${bright_white}-d(difficulty): Mostrar máquinas por una dificultad dada.${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -d${bright_white} 'Insane'${end}\n"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -d 'Insane'${end}\n"
   echo -e "\t${bright_white}-o(osSystem): Mostrar máquinas por un sistema operativo dado.${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -o${bright_white} 'Windows'${end}\n"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -o 'Windows'${end}\n"
   echo -e "\t${bright_white}-w(writeup): Mostrar el enlace a la resolución de una máquina${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -w${bright_white} 'Multimaster'${end}\n"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -w 'Multimaster'${end}\n"
   echo -e "\t${bright_white}-s(skill): Listar máquinas por skill${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -s${bright_white} 'SQLI'${end}\n"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -s 'SQLI'${end}\n"
   echo -e "\t${bright_white}-p(platform): Listar todas las máquinas de una plataforma${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -p${bright_white} 'HackTheBox'${end}\n"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -p 'HackTheBox'${end}\n"
   echo -e "\t${bright_white}-c(certificate): Listar todas las máquinas que dispongan de uno o mas certificados${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -c${bright_white} 'OSCP OSWE OSEP'${end}\n"
-
-  echo -e "${bright_white}Extras${end}"
-  echo -e "\t${bright_white}-v(verbose): Activar el modo verbose${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -u -v${end}\n"
-  echo -e "\t${bright_white}-y(yes): Confirmar cada acción que dependa de una confirmación de usuario${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -u -y${end}\n"
-  echo -e "\t${bright_white}-r(random): Modo de elección aleatorio. El script elegira una máquina al azar por ti.${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -r${end}\n"
-  echo -e "\t${bright_white}-t(translate): Traducir el output a un idioma especifico.${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -m${bright_white} 'Tentacle'${bright_yellow} -t${bright_white} 'es'${end}\n"
-  echo -e "\t${bright_white}-b(browser): Abrir el writeup de una máquina, en un navegador especifico.${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -w${bright_white} 'Tentacle'${bright_yellow} -b${bright_white} '' (Navegador por default: ${bright_yellow}firefox${bright_white})\n"
-  echo -e "\t${bright_white}-x(exclude banner): No mostrar el banner en el panel de ayida.${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -x${end}\n"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -c 'OSCP OSWE OSEP'${end}\n"
+  echo -e "\t${bright_white}-A(Advanced Search): Realizar una busqueda avanzada.${end}"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -A 'Unicode Sqli Insane windows oscp oswe'${end}\n"
   echo -e "\t${bright_white}-a(all): Listar todas las máquinas existentes.${end}"
   echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -a${end}\n"
-  echo -e "\t${bright_white}-A(Advanced Search): Realizar una busqueda avanzada, introduces dentro de comillas, tu input.${end}"
-  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -A ${bright_white}'Unicode Sqli Insane windows oscp oswe'${end}\n"
+
+  echo -e "${bright_white}Extras${end}"
+  echo -e "\t${bright_white}-r(random): Modo de elección aleatorio. El script elegira una máquina al azar por ti.${end}"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -r${end}\n"
+  echo -e "\t${bright_white}-v(verbose): Activar el modo verbose${end}"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -u -v${end}\n"
+  echo -e "\t${bright_white}-y(yes): Confirmar cada acción que dependa de una confirmación de usuario (sirve también para iterar por cada máquina)${end}"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -u -y${end} ${bright_white}| s4vimachines.sh ${bright_yellow}-A 'CSRF'${bright_white} -y${end}\n"
+  echo -e "\t${bright_white}-t(translate): Traducir el output a un idioma especifico.${end}"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -m 'Tentacle'${bright_yellow} -t${bright_white} 'es'${end}\n"
+  echo -e "\t${bright_white}-b(browser): Abrir el writeup de una máquina, en un navegador especifico.${end}"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -w 'Tentacle'${bright_yellow} -b${bright_white} '' (Navegador por default: ${bright_yellow}firefox${bright_white})\n"
+  echo -e "\t${bright_white}-x(exclude banner): No mostrar el banner en el panel de ayida.${end}"
+  echo -e "\t${bright_cyan}[Ejemplo]${bright_white} $0${bright_yellow} -x${end}\n"
 
 
 }
 
 function searchMachine(){
 
-  function helpMachine(){
-  
-    echo -e "\n${bright_cyan}[+]${bright_white} Opciones disponibles:\n"
-    echo -e "\t${bright_magenta}-m${bright_white} Buscar máquinas/s (Ejemplo: $0 -m 'Multimaster')"
-    echo -e "\t${bright_magenta}-t${bright_white} Traducir el output (Ejemplo: $0 -m 'Multimaster' -t 'es')${end}\n"
-    exit 
-  }
 
   machineName="$1"
-  [[ "$help" == true ]] && helpMachine
 
   if ! cat $PATH_ARCHIVE | grep -i "name: $machineName$" &>/dev/null; then
     echo -e "${bright_red}\n[!] Error fatal: Máquina no encontrada ${end}${bg_bright_red}\"$machineName\"\n${end}"
@@ -154,7 +156,13 @@ function searchForIp() {
     ip_addr="$1"
 
     matches=$(grep -B 6 -A 1 "ip: $ip_addr" "$PATH_ARCHIVE")
-    
+
+
+    if [[ -z "$ip_addr" ]]; then
+      echo -e "\n${bright_red}[!] Es necesario introducir tu input de usuario!${end}"
+      return 1
+    fi
+   
     if [[ -z "$matches" ]]; then
         echo -e "\n${bright_red}[!] Dirección IP no encontrada en la base de datos: $ip_addr.\n${end}"
         return 1
@@ -196,7 +204,7 @@ function showAllDifficulty(){
 function searchDifficulty(){
   difficulty="$1"
   difficulty=$(echo $difficulty | tr '[:upper:]' '[:lower:]')
-  
+ 
   # Validar que la dificultad exista
   if ! cat $PATH_ARCHIVE | grep -i "state: $difficulty" &>/dev/null; then
     echo -e "\n${bright_red}[!] Dificultad no encontrada.${end}\n"
@@ -225,11 +233,19 @@ function searchDifficulty(){
 searchOsSystem(){
   osSystem="$1"
   osSystem="$(echo "$osSystem" | tr '[:upper:]' '[:lower:]')"
+  
+  if [[ -z "$osSystem" ]]; then
+    echo -e "\n${bright_red}[!] Es necesario introducir tu input de usuario!${end}"
+    return 1
+  fi
+
   if ! cat $PATH_ARCHIVE | grep -i "os: $osSystem" &>/dev/null; then
     echo -e "\n${bright_red}[!] Sistema operativo no encontrado.${end}\n"
     echo -e "\t${bright_white}Sistemas operativos disponibles:${end} ${bright_cyan}Linux${end} ${bright_white}-${end} ${bright_blue}Windows${end}"
     exit 1
   fi
+
+
   echo -e "\n${bright_green}[+] Listando máquinas de Sistema Operativo: $osSystem\n${end}"
   echo -e "${bright_cyan}[+]${bright_white} Máquinas de la plataforma HackTheBox:${end}"
   tput setaf 2; echo; cat $PATH_ARCHIVE | grep -i "os: $osSystem" -B 2 | grep -i "platform: HackTheBox" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
@@ -240,15 +256,6 @@ searchOsSystem(){
 }
 
 function showLink(){
-  if [[ $help == true || "$1" == '-h' ]]; then
-    echo -e "\n${bright_white}Argumentos disponibles: \n"
-    echo -e "\t-w (writeup) Buscar el enlace a el writeup de una máquina."
-    echo -e "\tEjemplo: $0 -w Tentacle \n\tOutput: https://www.youtube.com/watch?v=hFIWuWVIDek\n"
-    echo -e "\t-b (browser) Abrir writeup en un navegador, puedes pasarle como parametro una cadena vacia o 'default' para que en ambos casos sea firefox el navegador"
-    echo -e "\tEjemplo: $0 -w Tentacle -b ''\n\tOutput: firefox https://www.youtube.com/watch?v=hFIWuWVIDek${end}\n"
-    echo -e "\t"
-    exit 
-  fi
   writeup="$1"
   writeup=$(echo "$writeup" | tr '[:upper:]' '[:lower:]')
 
@@ -273,7 +280,7 @@ function showLink(){
 }
 
 function updatefiles(){
-  
+ 
   if [[ ! -f $PATH_ARCHIVE ]]; then
       if [[ "$confirm_act" == false ]]; then
         echo -en "\n${bright_cyan}[+]${bright_white} El archivo necesario ${bright_black}($PATH_ARCHIVE)${bright_white} no existe ¿Deseas descargarlo? (Y/n)${end} " && read -r yes_no
@@ -382,6 +389,12 @@ function searchPlatform(){
     exit 1
   fi
 
+  if [[ -z "$platform" ]]; then
+    echo -e "\n${bright_red}[!] Es necesario introducir tu input de usuario!${end}"
+    return 1
+  fi
+
+
   if [[ "$confirm_act" == false ]]; then 
     if [[ "$platform" =~ ^[Hh] ]]; then
       echo -e "\n${bright_green}[+]${bright_white} Listando máquinas de la plataforma HackTheBox: ${end}"
@@ -435,6 +448,7 @@ function searchSkill(){
   skill="$1"
   output=$(echo "./addFuncs/getSkills.sh" "$skill" | bash)  # Captura la salida del script
   
+
   if [[ -z "$skill" ]]; then
     echo -e "\n${bright_red}[!] Es necesario introducir una cadena valida.${end}"
     exit 1
@@ -510,16 +524,11 @@ function showDetailsMachine(){
 
 function advanced_search(){
  : '
- Esta función ya se termino amigo por fin
+ Esta función ya se termino amigo por fin. 
+ Si quieres hecharle un ojo a la función revisala en ./addFuncs/advanced_search.sh o haz un find . -iname "advanced*.sh" y metele un cat para ver la función
  '
   objects="$1"
-  if [[ "${help}" == true ]]; then
-    echo -e "\n${bright_cyan}[+]${bright_white} Uso $0: ${end}\n"
-    echo -e "\t${bright_yellow}-y${bright_white}(${bright_green}yes${bright_white}) Al realizar una busqueda y esta ser exitosa, se iterara por cada una de las máquinas para listar sus propiedades.${end}"
-     echo -e "\t${bright_yellow}-t${bright_white}(${bright_green}translate${bright_white}) Al realizar una busqueda y esta ser exitosa, se iterara por cada una de las máquinas para listar sus propiedades, pero en un idioma dado.\n${end}"
-   
-    return 0
-  fi
+
 #  output=$(echo "./addFuncs/advanced_search.sh " "$objects" | bash)
   [[ -z "${objects}" ]] || echo -e "\n${bright_green}[+]${bright_white} Realizando la busqueda avanzada:${bright_cyan} \"$objects\"${end}" 
 
@@ -549,9 +558,9 @@ function searchOsDiff(){
     showAllDifficulty
     exit 1
   fi
-  
+    
   local total_htb=$(cat $PATH_ARCHIVE | grep -i "os: $osSystem" -B 2 -A 4 | grep -i "state: $difficulty" -B 3 | grep -i "platform: HackTheBox" -A 1 | grep -oP "name:\K.*" | wc -l)
-  if [[ $total_htb -eq 0 ]]; then
+  if [[ "$total_htb" -eq 0 ]]; then
     echo -e "\n${bright_black}[*] No se encontraron máquinas para la plataforma de HackTheBox.${end}\n"
   else
     echo -e "\n${bright_cyan}[+]${bright_white} Máquinas de la plataforma: HackTheBox (${bright_green}$total_htb${bright_white}):${end}" 
@@ -559,7 +568,7 @@ function searchOsDiff(){
   fi
   
   local total_vulnhub=$(cat $PATH_ARCHIVE | grep -i "os: $osSystem" -B 2 -A 4 | grep -i "state: $difficulty" -B 3 | grep -i "platform: VulnHub" -A 1 | grep -oP "name:\K.*" | wc -l)
-  if [[ $total_vulnhub -eq 0 ]]; then
+  if [[ "$total_vulnhub" -eq 0 ]]; then
     echo -e "\n${bright_black}[*] No se encontraron máquinas en la plataforma de VulnHub.${end}\n"
   else
     echo -e "\n${bright_cyan}[+]${bright_white} Máquinas de la plataforma: VulnHub (${bright_yellow}$total_vulnhub${bright_white}):${end}" 
@@ -589,7 +598,7 @@ while getopts ':w:o:b:d:i:m:c:huvyxrp:t:s:aA:' arg; do
     A) objects="$OPTARG"; ((parameter_counter+=11));;
     r) ((parameter_counter+=12));;
     h) help=true;;
-    \?) echo -e "\n${bright_red}[!]${bright_white} Parametro no valido ${bright_yellow}-$OPTARG${end}"; helpPanel; exit 1;;
+    \?) echo -e "\n${bright_red}[!]${bright_white} Parametro invalido: ${bright_yellow}-$OPTARG${end}\n"; exit 1;;
   esac
 done
 
