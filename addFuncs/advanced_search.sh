@@ -23,19 +23,18 @@ while IFS= read -r line; do
         continue
     fi
     
-    # Si encontramos una línea vacía, reseteamos el flag
+    # Si encontramos una línea vacía, reseteamos la flag
     if [[ -z "$line" ]]; then
         skip_fields=0
     fi
     
-    # Solo procesamos líneas que no sean de los campos a ignorar
     if [[ $skip_fields -eq 0 ]]; then
         # Detectar nombre de la máquina
         if [[ $line =~ name:\ (.*) ]]; then
             machine_name="${BASH_REMATCH[1]}"
         fi
         
-        # Acumular datos relevantes (excluyendo ip y video)
+        # Acumular datos relevantes 
         machine_data+="$line"$'\n'
     fi
     
