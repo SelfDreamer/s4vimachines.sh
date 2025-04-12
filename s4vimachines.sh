@@ -33,7 +33,7 @@ function banner(){
      %%   %%%%%%%      .%%%%%%%  %%%
      %%       #%%%%%%%%%%%#      %%%    ${bright_white}s4vimachines - (infosec) Terminal Client${bright_green}
      %%           %%%%#          %%%    ${bright_blue}\t\t        by Flick${bright_red} <3${end}${bright_green}
-     %%            %%%           %%%    ${bright_black}\t\t        this was not copied${end}${bright_green} 
+     %%            %%%           %%%     
      %%            %%%           %%%
      %%%%%         %%%          %%%%
        %%%%%%%     %%%     %%%%%%.
@@ -41,6 +41,8 @@ function banner(){
                 %%%%%%%%#
                     .${end}\n"
 
+
+                    # Este banner no fue copiado jeje 
 }
 
 function getInfo(){
