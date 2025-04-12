@@ -21,6 +21,7 @@ Desde **infosecmachines**
 
 ![image](https://github.com/user-attachments/assets/babdc8b8-c82e-42f5-8b26-b3fe16d2b805)
 
+Esta busqueda flexible no se limita a un solo parametro, los parametros `-c` *(certificate)* y `-s` *(skill)* también lo poseen.
 
 ---
 
