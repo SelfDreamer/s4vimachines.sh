@@ -18,10 +18,6 @@ function def_handler(){
 # Ctrl + C
 trap def_handler INT
 
-if ! ping -c 1 8.8.8.8 &>/dev/null; then
-  echo -e "\n${bright_black}[!] Al no disponer de internet, este script estara limitado!!"
-fi
-
 function banner(){
       echo -e "${bright_green}
                     .
@@ -241,7 +237,7 @@ searchOsSystem(){
     return 1
   fi
 
-  if ! cat $PATH_ARCHIVE | grep -i "os: $osSystem" &>/dev/null; then
+  if ! cat $PATH_ARCHIVE | grep -i "os: $osSystem$" &>/dev/null; then
     echo -e "\n${bright_red}[!] Sistema operativo no encontrado.${end}\n"
     echo -e "\t${bright_white}Sistemas operativos disponibles:${end} ${bright_cyan}Linux${end} ${bright_white}-${end} ${bright_blue}Windows${end}"
     exit 1
@@ -250,10 +246,10 @@ searchOsSystem(){
 
   echo -e "\n${bright_green}[+] Listando máquinas de Sistema Operativo: $osSystem\n${end}"
   echo -e "${bright_cyan}[+]${bright_white} Máquinas de la plataforma HackTheBox:${end}"
-  tput setaf 2; echo; cat $PATH_ARCHIVE | grep -i "os: $osSystem" -B 2 | grep -i "platform: HackTheBox" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
+  tput setaf 2; echo; cat $PATH_ARCHIVE | grep -i "os: $osSystem$" -B 2 | grep -i "platform: HackTheBox" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
   
   echo -e "${bright_cyan}[+]${bright_white} Máquinas de la plataforma VulnHub:${end}"
-  tput setaf 3; echo; cat $PATH_ARCHIVE | grep -i "os: $osSystem" -B 2 | grep -i "platform: VulnHub" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
+  tput setaf 3; echo; cat $PATH_ARCHIVE | grep -i "os: $osSystem$" -B 2 | grep -i "platform: VulnHub" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
 
 }
 
@@ -362,25 +358,9 @@ function random_machine(){
         echo -ne "\r\033[K${bright_blue}[+]${bright_white} Tu máquina elegida es: ${bright_cyan}\"$machineName\"${end}"
         ((value++))
     done
-
-  if ! cat $PATH_ARCHIVE | grep -i "name: $machineName" &>/dev/null; then
-    echo -e "${bright_red}\n[!] Error fatal: Máquina no encontrada ${end}${bg_bright_red}\"$machineName\"\n${end}"
-    exit 1
-  fi
-
-  output=$(cat $PATH_ARCHIVE| grep -iP "name: ${machineName}$" -A 6 -B 1  | sed 's/^ *//g'; echo) 
-  echo "$output" | while IFS= read -r line; do
-    first_column=$(echo $line | awk '{print $1}')
-    rest_columns=$(echo $line | cut -d' ' -f2-)
-    if [[ -n "$rest_columns" ]]; then
-      echo -e "${bright_yellow}${first_column}${end} ${bright_white}${rest_columns}${end}" >> $results
-    fi
-
-  done
-
-  echo -e "\n${bright_cyan}[+]${end} ${bright_white}Maquina encontrada:${end} ${bright_magenta}$machineName${end}${bright_white}, listando sus propiedades:${end}"
-  echo; /bin/cat $results | sed 's/--.*//'; rm $results
-  tput cnorm && exit
+  
+    tput cnorm && searchMachine "$machineName" 
+    return 0
 }
 
 function searchPlatform(){
@@ -505,24 +485,6 @@ function get_allMachines(){
 }
 
 
-function showDetailsMachine(){
-  machineName="$1"
-
-  output=$(cat $PATH_ARCHIVE| grep -i "name: ${machineName}$" -A 6 -B 1  | sed 's/^ *//g')
-
-    echo "$output" | while IFS= read -r line; do
-      first_column=$(echo $line | awk '{print $1}')
-      rest_columns=$(echo $line | cut -d' ' -f2-)
-      if [[ -n "$rest_columns" ]]; then
-        echo -e "${bright_yellow}${first_column}${end} ${bright_white}${rest_columns}${end}" >> $results
-      fi
-
-    done
-
-    echo -e "\n${bright_cyan}[+]${end} ${bright_white}Maquina encontrada:${end} ${bright_magenta}$machineName${end}${bright_white}, listando sus propiedades:${end}"
-    echo; /bin/cat $results | sed 's/--.*//'; rm $results
-
-}
 
 function advanced_search(){
  : '
@@ -538,7 +500,7 @@ function advanced_search(){
 
   if [[ "$confirm_act" == true ]]; then
     while IFS= read -r machine; do
-      showDetailsMachine "$machine"
+      searchMachine "$machine"
     done < /tmp/machine_results
     rm /tmp/machine_results 2>/dev/null
     return 0
