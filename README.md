@@ -88,34 +88,34 @@ Actualizaciones y dependencias
 -u(update): Actualizar dependencias
 
 -m(machine): Mostrar las propiedades de una máquina.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -m 'Multimaster'
+[Ejemplo] s4vimachines.sh -m 'Multimaster'
 
 -i(ip_addr): Mostrar máquinas por la dirección IP.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -i '10.10.10.179'
+[Ejemplo] s4vimachines.sh -i '10.10.10.179'
 
 -d(difficulty): Mostrar máquinas por una dificultad dada.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -d 'Insane'
+[Ejemplo] s4vimachines.sh -d 'Insane'
 
 -o(osSystem): Mostrar máquinas por un sistema operativo dado.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -o 'Windows'
+[Ejemplo] s4vimachines.sh -o 'Windows'
 
 -w(writeup): Mostrar el enlace a la resolución de una máquina
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -w 'Multimaster'
+[Ejemplo] s4vimachines.sh -w 'Multimaster'
 
 -s(skill): Listar máquinas por skill
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -s 'SQLI'
+[Ejemplo] s4vimachines.sh -s 'SQLI'
 
 -p(platform): Listar todas las máquinas de una plataforma
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -p 'HackTheBox'
+[Ejemplo] s4vimachines.sh -p 'HackTheBox'
 
 -c(certificate): Listar todas las máquinas que dispongan de uno o mas certificados
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -c 'OSCP OSWE OSEP'
+[Ejemplo] s4vimachines.sh -c 'OSCP OSWE OSEP'
 
 -A(Advanced Search): Realizar una busqueda avanzada.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -A 'Unicode Sqli Insane windows oscp oswe'
+[Ejemplo] s4vimachines.sh -A 'Unicode Sqli Insane windows oscp oswe'
 
 -a(all): Listar todas las máquinas existentes.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -a 
+[Ejemplo] s4vimachines.sh -a 
 ```
 
 
@@ -123,20 +123,20 @@ Actualizaciones y dependencias
 ### Extras
 ```
 -r(random): Modo de elección aleatorio. El script elegira una máquina al azar por ti.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -r
+[Ejemplo] s4vimachines.sh -r
 
 -v(verbose): Activar el modo verbose
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -u -v
+[Ejemplo] s4vimachines.sh -u -v
 
 -y(yes): Confirmar cada acción que dependa de una confirmación de usuario (sirve también para iterar por cada máquina)
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -u -y | s4vimachines.sh -A 'CSRF' -y
+[Ejemplo] s4vimachines.sh -u -y | s4vimachines.sh -A 'CSRF' -y
 
 -t(translate): Traducir el output a un idioma especifico.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -m 'Tentacle' -t 'es'
+[Ejemplo] s4vimachines.sh -m 'Tentacle' -t 'es'
 
 -b(browser): Abrir el writeup de una máquina, en un navegador especifico.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -w 'Tentacle' -b '' (Navegador por default: firefox)
+[Ejemplo] s4vimachines.sh -w 'Tentacle' -b '' (Navegador por default: firefox)
 
 -x(exclude banner): No mostrar el banner en el panel de ayida.
-[Ejemplo] /opt/s4vimachines.sh//s4vimachines.sh -x 
+[Ejemplo] s4vimachines.sh -x 
 ```
