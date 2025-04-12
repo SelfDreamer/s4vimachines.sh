@@ -1,9 +1,26 @@
 # S4vimachines
 
 #### ¿Qué es S4vimachines.sh?
-Este es un cliente de terminal, que se encarga de extraer información acerca de las máquinas que va resolviendo [s4vitar](https://www.youtube.com/s4vitar). Este cliente de terminal, trata de tener la misma flexibilidad que se tiene al buscar en la misma página de [infosec](https://infosecmachines.io). 
+Este es un cliente de terminal, que se encarga de extraer información acerca de las máquinas que va resolviendo [s4vitar](https://www.youtube.com/s4vitar). Este cliente de terminal, trata de tener la misma flexibilidad que se tiene al buscar en la misma página de [infosecmachines](https://infosecmachines.io). 
 > [!IMPORTANT]
 > Las máquinas y su información se extraen de [infosecmachines](https://infosecmachines.io/api/machines).
+
+---
+### Flexibilidad a la hora de buscar
+
+Ejemplo desde terminal
+
+```bash
+s4vimachines.sh -A 'Insane OSCP Unicode SQLI HackTheBox Windows Kerberos OSWE'
+```
+
+![image](https://github.com/user-attachments/assets/15e5dd3e-3189-4d9f-9ad3-d5300f421f01)
+
+
+Desde **infosecmachines**
+
+![image](https://github.com/user-attachments/assets/babdc8b8-c82e-42f5-8b26-b3fe16d2b805)
+
 
 ---
 
