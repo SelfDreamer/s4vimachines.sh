@@ -1,11 +1,16 @@
 #!/bin/bash
+# Script de bash para buscar máquinas que s4vitar va resolviendo.
+# Puedes meter este script en tu PATH para mas comodidad, deah. 
 
-ruta=$(realpath ${0} | rev | cut -d'/' -f2- | rev)
+ruta=$(realpath "${0}" | rev | cut -d'/' -f2- | rev)
 cd "${ruta}" || exit 1 
+
 SELF=${0##*/}
 # Colors
 source Colors.sh
 source ./variables/global_variables.sh
+source ./config/appareance.sh
+
 
 [[ ! -d "${DIRECTORY}" ]] && mkdir -p "${DIRECTORY}"
 
@@ -21,6 +26,34 @@ function def_handler(){
 }
 # Ctrl + C
 trap def_handler INT
+
+blink_text () {
+	text="${1:?This parameter is required!}" 
+	echo -e "\e[5m${text}\e[0m"
+}
+
+function beautifiul_text(){ 
+
+  text="${1:-♥ https://www.textualize.io}"
+
+  r1=170; g1=110; b1=230
+  r2=90;  g2=60;  b2=150
+
+  len=${#text}
+
+  printf "\033[1m"
+
+  for ((i=0; i<len; i++)); do
+      ch=${text:i:1}
+      r=$((r1 + (r2 - r1) * i / (len - 1)))
+      g=$((g1 + (g2 - g1) * i / (len - 1)))
+      b=$((b1 + (b2 - b1) * i / (len - 1)))
+      printf "\033[38;2;%d;%d;%dm%s" "$r" "$g" "$b" "$ch"
+  done
+
+  echo -e "\033[0m"
+}
+
 
 function banner(){
       echo -e "${bright_green}
@@ -45,225 +78,312 @@ function banner(){
                     # Este banner no fue copiado jeje 
 }
 
-function getInfo(){
-  echo -ne "${bright_white}Total machines: ${end}"; tput setaf 6; cat $PATH_ARCHIVE | tail -n 6 | grep -oP "\d{1,3}" | xargs | sed 's| |+|g' | bc; echo
+function helpPanel(){
+  content=(
 
-  declare -i color=1 
-  tail -n 6 "${PATH_ARCHIVE}" | grep -Pi "totalMachines.*" -A 3 | sed 's/htb/HackTheBox (htb)/' | sed 's/vuln/VulnHub (vuln)/' | sed 's/swigger/PortSwigger (swigger)/' | tail -n3  | sed 's/^ *//g' | while read line; do 
-    ((color+=1)); tput setaf $color; echo "$line" 
+    " ${green_water}-m${reset} ${light_blue} --machine${reset} ${opt}MACHINE${reset}                 ${birght_white}Mostrar las propiedades de una ${subrayado}máquina${reset}${birght_white}.${reset}"
+    " ${green_water}-i${reset} ${light_blue} --ip-adress${reset} ${opt}ADRESS${reset}                ${birght_white}Filtrar por máquinas a las que se les haya asignado dicha ${subrayado}IP${birght_white}.${reset}"
+    " ${green_water}-d${reset} ${light_blue} --difficulty${reset} ${opt}DIFFICULTY${reset}           ${birght_white}Mostrar todas las máquinas de cierta ${subrayado}dificultad${birght_white}.${reset} ${comment}Fácil, Media, Díficil e Insane.${reset}"
+    " ${green_water}-o${reset} ${light_blue} --os${reset} ${opt}SYSTEM${reset}                       ${birght_white}Mostrar todas las máquinas por un determinado ${subrayado}sistema operativo${birght_white}.${reset} ${comment}Linux, Windows, Otros${reset}"
+    " ${green_water}-w${reset} ${light_blue} --writeup${reset} ${opt}MACHINE${reset}                 ${birght_white}Obtener solo el ${subrayado}writeup${birght_white} de una máquina.${reset}"
+    " ${green_water}-s${reset} ${light_blue} --skill${reset} ${opt}SKILLS${reset}                    ${birght_white}Listar máquinas por ${subrayado}skill${birght_white} o ténicas que se requieran para resolver la máquina.${reset} ${comment}e.g: 'Unicode SQLI Waf Bypass Kerberos'${reset}"
+    " ${green_water}-c${reset} ${light_blue} --cert${reset} ${opt}CERTS${reset}                      ${birght_white}Listar todas las máquinas que te preparen para uno o mas ${subrayado}certificados${birght_white}.${reset} ${comment} e.g: 'OSCP eJPT eWPTxv2'${reset}"
+    " ${green_water}-p${reset} ${light_blue} --preview${reset} ${opt}POSITION${reset}                ${birght_white}Indicar la posisión en la que saldra la ${underline}preview${end}${bright_wite} de fzf.${ed}${comment} Parametros: ${bold}up|down|right|left${end}"
+
+    " ${green_water}-A${reset} ${light_blue} --Advanced-search${reset} ${opt}OBJECTS${reset}         ${birght_white}Realizar una ${subrayado}busqueda avanzada${birght_white}.${reset} ${comment}e.g: 'OSCP Windows Insane SQLI'${reset}"
+    " ${green_water}-a${reset} ${light_blue} --all-machines${reset}                    ${birght_white}Mostrar todas las máquinas existentes en la base de datos.${reset}"
+    " ${green_water}-u${reset} ${light_blue} --update-db${reset} ${opt}OPTIONAL${reset}              ${birght_white}Actualizar o descargar dependencias faltantes.${reset}"
+    " ${green_water}-r${reset} ${light_blue} --random-machine${reset} ${opt}OPTIONAL${reset}         ${birght_white}Obtener una máquina al ${subrayado}azar${birght_white} de todas las que hay.${reset} ${comment}Este metodo acepta parametros.${reset}"
+    " ${green_water}-v${reset} ${light_blue} --verbose${reset}                         ${birght_white}Habilitar el modo ${subrayado}verbose${birght_white}, el cual sirve para mostrar mas información de lo habitual.${reset}"
+    " ${green_water}-y${reset} ${light_blue} --no-confirm${reset}                      ${birght_white}Saltarse prompts que requieran de confirmación de usuario.${reset}"
+    "    ${light_blue} --recoils${reset} ${opt}RECOILS${reset}                 ${birght_white}Definir cuantas iteraciones dara el modo aleatorio para la elección de máquinas.${reset} ${comment}Por defecto seran 100 iteraciones. ${reset}"
+    "    ${light_blue} --color-matches${reset}                   ${birght_white}Colorear las lineas donde salgan las palabras clave.${reset} ${comment}Funcion de busqueda avanzada, por certificado o skill${reset}"
+    " ${green_water}-h${reset} ${light_blue} --help${reset}                            ${birght_white}Mostrar este mensaje y salir.${reset}"
+  )
+
+  cols=$(tput cols)
+  ((inner_width = cols - 3))
+
+  maxlen=0
+  for line in "${content[@]}"; do
+    clean=$(printf "%b" "$line" | sed 's/\x1b\[[0-9;]*m//g')
+    len=${#clean}
+    (( len > maxlen )) && maxlen=$len
   done
 
-  printf "%bHTB-Challenge: Comming soon%b\n" "${bright_magenta}" "${end}"
-  echo
-}
+  if (( maxlen > inner_width )); then
+    maxlen=$inner_width
+  fi
 
+    function print_line() {
+      local text="$1"
+      local clean=$(printf "%b" "$text" | sed 's/\x1b\[[0-9;]*m//g')
+      local spaces=$((inner_width - ${#clean}))
+      (( spaces < 0 )) && spaces=0
+      printf "${border}│${reset}%b%${spaces}s${border}│${reset}\n" "$text" ""
+    }
 
-function helpPanel(){
-  $exclude_banner && exec 3>/dev/null || exec 3>&1 
-  local total_machines=$(grep -i Total -A 4 "${PATH_ARCHIVE}" | grep -oP "\d{1,3}" | xargs | sed 's/ /+/g' | bc)
-    
-  banner >&3 
-  getInfo >&3
+  printf "${border}╭─${header} Options ${border}$(printf '─%.0s' $(seq 1 $((inner_width - 10))))╮${reset}\n"
 
-  for _ in $(seq 1 80); do
-    echo -ne "${bright_red}-" >&3 
-  done; 
+  for line in "${content[@]}"; do
+    print_line "$line"
+  done
 
-  echo -ne "${end}" 
+  printf "${border}╰$(printf '─%.0s' $(seq 1 $inner_width))╯${reset}\n"
 
-  echo -e "\n" >&3
+  beautifiul_text "♥ https://SelfDreamer.github.io" 
 
-  HELP="""\n${bright_white}Modo de uso: [${SELF}] [PARAMETROS] [ARGUMENTOS]${end}
-  \t${bright_yellow}-h${bright_magenta}(help)${bright_white}: Mostrar el manual de ayuda.${end}
-
-  \n${bright_white}Actualizaciones y dependencias:${end}
-  \t${bright_yellow}-u${bright_magenta}(update):${bright_white} Actualizar dependencias${end}
-
-  \n${bright_white}Listar máquinas y/o propiedades:${end}
-  \t${bright_yellow}-m${bright_magenta}(machine):${bright_white} Mostrar las propiedades de una máquina.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -m 'Multimaster'${end}\n
-  \t${bright_yellow}-i${bright_magenta}(ip_addr):${bright_white} Mostrar máquinas por la dirección IP.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -i '10.10.10.179'${end}\n
-  \t${bright_yellow}-d${bright_magenta}(difficulty):${bright_white} Mostrar máquinas por una dificultad dada.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -d 'Insane'${end}\n
-  \t${bright_yellow}-o${bright_magenta}(osSystem):${bright_white} Mostrar máquinas por un sistema operativo dado.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -o 'Windows'${end}\n
-  \t${bright_yellow}-w${bright_magenta}(writeup):${bright_white} Mostrar el enlace a la resolución de una máquina${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -w 'Multimaster'${end}\n
-  \t${bright_yellow}-s${bright_magenta}(skill):${bright_white} Listar máquinas por skill${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -s 'SQLI'${end}\n
-  \t${bright_yellow}-p${bright_magenta}(platform):${bright_white} Listar todas las máquinas de una plataforma${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -p 'HackTheBox'${end}\n
-  \t${bright_yellow}-c${bright_magenta}(certificate):${bright_white} Listar todas las máquinas que dispongan de uno o mas certificados${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -c 'OSCP OSWE OSEP'${end}\n
-  \t${bright_yellow}-A${bright_magenta}(Advanced Search):${bright_white} Realizar una busqueda avanzada.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -A 'Unicode Sqli Insane windows oscp oswe'${end}\n
-  \t${bright_yellow}-a${bright_magenta}(all):${bright_white} Listar todas las máquinas existentes.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -a${end}\n
-
-  ${bright_white}Extras:${end}
-  \t${bright_yellow}-r${bright_magenta}(random):${bright_white} Modo de elección aleatorio. El script elegira una máquina al azar por ti.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -r${end}\n
-  \t${bright_yellow}-v${bright_magenta}(verbose):${bright_white} Activar el modo verbose${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -u -v${end}\n
-  \t${bright_yellow}-y${bright_magenta}(yes):${bright_white} Confirmar cada acción que dependa de una confirmación de usuario (sirve también para iterar por cada máquina)${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -u -y${end} ${bright_white}| s4vimachines.sh ${bright_yellow}-A 'CSRF'${bright_white} -y${end}\n
-  \t${bright_yellow}-t${bright_magenta}(translate):${bright_white} Traducir el output a un idioma especifico.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -m 'Tentacle'${bright_yellow} -t${bright_white} 'es'${end}\n
-  \t${bright_yellow}-b${bright_magenta}(browser):${bright_white} Abrir el writeup de una máquina, en un navegador especifico.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -w 'Tentacle'${bright_yellow} -b${bright_white} '' (Navegador por default: ${bright_yellow}firefox${bright_white})\n
-  \t${bright_yellow}-x${bright_magenta}(exclude banner):${bright_white} No mostrar el banner en el panel de ayida.${end}
-  \t${bright_cyan}[Ejemplo]${bright_white} ${SELF}${bright_yellow} -x${end}\n"""
-
-  printf "%b\n" "${HELP}"
-  
-  exec 3>&-
+  printf "\n"
 
 }
 
 function searchMachine(){
+  # ╭─────────────╮
+  # │ Hola Mundo! │
+  # ╰─────────────╯
+
+  machineName="${1}"
+
+  if [[ -z "${machineName}" ]]; then 
+    error "Error" "${bright_white}Esta función require de un parametro el cual no se indico!${end}"
+    helpPanel
+    exit 1 
+  fi
 
 
-  machineName="$1"
+  results=$(jq -r --arg icon_color "${icon_color}" --arg name "${machineName}" --arg icon "${icon}" --arg blue "${bright_blue}" --arg end "${end}" --arg bright_cyan "${bright_cyan}" --arg bright_magenta "${bright_magenta}" --arg bright_white "${bright_white}" '
 
-  if ! grep -i "name: ${machineName}$" "${PATH_ARCHIVE}" &>/dev/null; then
-    echo -e "${bright_red}\n[!] Error fatal: Máquina no encontrada ${end}${bg_bright_red}\"$machineName\"\n${end}"
+  .tutorials[]
+  | select((.nombre | ascii_downcase) == ($name | ascii_downcase))
+  | 
+  (
+    "\(.nombre)" as $n |
+    "\(.certificaciones)" as $c |
+    "\(.tecnicas)" as $t |
+    "\(.videoUrl)" as $writeup |
+    "\(.ip)" as $addr |
+    "Nombre: \(.nombre)" as $line1 |
+    "IP: \(.ip)" as $line2 |
+    "SO: \(.sistemaOperativo)" as $line3 |
+    "Dificultad: \(.dificultad)" as $line4 |
+
+    [$line1, $line2, $line3, $line4] 
+
+    | map(length) 
+    | max as $maxLen |
+
+    def pad($text): $text + (" " * ($maxLen - ($text | length))) ;
+
+    def paint($text):
+      ($text | split(":") | .[0] as $k | .[1] as $v |
+        "\($bright_magenta)\($k):\($bright_white)\($v)\($blue)") ;
+
+    "\($blue)╭" +
+    "\\033]8;;\($writeup)\\033\\\\\($bright_cyan)\($n)\\033[0m\\033]8;;\\033\\\\" + "\($blue)─" + ("─" * (($maxLen + 2) - ($n | length))) + "─╮\n" +
+
+    "│ " + "\($bright_magenta)▌\($blue)" + paint(pad($line2)) + " " + " │\n" +
+    "│ " + "\($bright_magenta)▌\($blue)" + paint(pad($line3)) + " " + " │\n" +
+    "│ " + "\($bright_magenta)▌\($blue)" + paint(pad($line4)) + " " + " │\n" +
+    "╰" + ("─" * ($maxLen + 2)) + "──" + "╯\n" + 
+    "\u001b[35mCertificaciones:\u001b[0m\n" +
+    (($c // "") 
+    | split("\n") 
+    | map("\($icon_color)\($icon) \u001b[97m" + . + "\u001b[0m") 
+    | join("\n")) +
+    "\n\n\u001b[35mTécnicas:\u001b[0m\n" +
+
+    (($t // "")
+        | split("\n")
+        | map("\($icon_color)\($icon) \u001b[97m" + . + "\u001b[0m")
+        | join("\n")
+      ) +
+      "\n\n\u001b[35mVideo:\u001b[0m \u001b[97m\($writeup)\u001b[0m"
+  )
+
+  ' "${PATH_ARCHIVE:?Fatal error, variable PATH_ARCHIVE not exists!}") 
+
+  if [[ -z "${results}" ]]; then 
+
+    error "Error" "${bright_white}No se encontro la máquina ${bold}${machineName}${end}${bright_white}, intentalo de nuevo mas tarde!${end}"
+
+    helpPanel
+
     exit 1
+
   fi
- 
-  if [[ $show_output_translate == false ]]; then
-  output=$(grep -i "name: ${machineName}$" "${PATH_ARCHIVE}" -A 6 -B 1  | sed 's/^ *//g')
 
-    echo "$output" | while IFS= read -r line; do
-      first_column=$(echo $line | awk '{print $1}')
-      rest_columns=$(echo $line | cut -d' ' -f2-)
-      if [[ -n "$rest_columns" ]]; then
-        echo -e "${bright_yellow}${first_column}${end} ${bright_white}${rest_columns}${end}" >> $results
-      fi
+  printf "\n%b[+]%b Listando las propiedades de la máquina %b%s%b:%b\n" "${bright_green}" "${bright_white}" "${bright_magenta}" "${machineName^}" "${bright_white}" "${end}"
+  
+  printf "\n%b\n\n" "${results}"
 
-    done
 
-    echo -e "\n${bright_cyan}[+]${end} ${bright_white}Maquina encontrada:${end} ${bright_magenta}$machineName${end}${bright_white}, listando sus propiedades:${end}"
-    echo; /bin/cat $results | sed 's/--.*//'; rm $results
-  else
-    output=$(cat $PATH_ARCHIVE| grep -i "name: $machineName" -A 6 -B 1  | sed 's/^ *//g' | trans -b -t $language; echo)
-
-    echo "$output" | while IFS= read -r line; do
-      first_column=$(echo $line | awk '{print $1}')
-      rest_columns=$(echo $line | cut -d' ' -f2-)
-      if [[ -n "$rest_columns" ]]; then
-        echo -e "${bright_yellow}${first_column}${end} ${bright_white}${rest_columns}${end}" >> $results
-      fi
-
-    done
-
-    echo -e "\n${bright_cyan}[+]${end} ${bright_white}Maquina encontrada:${end} ${bright_magenta}$machineName${end}${bright_white}, listando sus propiedades:${end}"
-    echo; /bin/cat $results | sed 's/--.*//'; rm $results
-    return 0
-      
-  fi
 }
 
 function searchForIp() {
-    ip_addr="$1"
 
-    matches=$(grep -B 6 -A 1 "ip: $ip_addr" "$PATH_ARCHIVE")
+  ip_addr="${1}"
+
+  if [[ -z "${ip_addr}" ]]; then 
+    
+    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+
+    helpPanel
+
+    exit 1 
+
+  fi 
 
 
-    if [[ -z "$ip_addr" ]]; then
-      echo -e "\n${bright_red}[!] Es necesario introducir tu input de usuario!${end}"
-      return 1
-    fi
-   
-    if [[ -z "$matches" ]]; then
-        echo -e "\n${bright_red}[!] Dirección IP no encontrada en la base de datos: $ip_addr.\n${end}"
-        return 1
-    fi
+  machineName="$(jq -r '.tutorials[] | "Machine: \(.nombre)\nip: \(.ip)\n"' ${PATH_ARCHIVE} | grep -P "${ip_addr}$" -B 1 | grep -oP "Machine: \K(\S+)")"
+  
+  if [[ -z "${machineName}" ]]; then 
 
-    # Extraer nombres de máquinas
-    machineNames=$(echo "$matches" | grep -oP 'name: \K.*')
+    error "Error" "${bright_red}Error fatal, la dirección ip indicada no se encontro en la base de datos, se tenso!${end}" 
+    helpPanel
+    exit 1
+  
+  fi 
 
-    # Contar cuántas máquinas coinciden
-    amount_machines=$(echo "$machineNames" | wc -l)
+  searchMachine "${machineName}"
 
-    # Si solo hay una coincidencia
-    if [[ "$amount_machines" -eq 1 ]]; then
-        echo -e "\n${bright_green}[+]${end} ${bright_white}La dirección IP: ${bright_yellow}$ip_addr${end} pertenece a la máquina ${bright_blue}$machineNames${end}"
-        [[ "$confirm_act" == true ]] && searchMachine "$machineNames"
-        return 0
-    fi
-
-    # Si hay múltiples coincidencias
-    echo -e "\n${bright_green}[+]${end} ${bright_white}Matches encontrados para la IP: ${bright_yellow}$ip_addr${end}"
-    echo; tput setaf 4; echo "$machineNames" | column; echo
-
-    # Si la confirmación está activada, recorrer las máquinas
-    if [[ "$confirm_act" == true ]]; then
-        while IFS= read -r machine; do
-            searchMachine "$machine"
-        done <<< "$machineNames"
-    fi
 }
 
-function showAllDifficulty(){
-  echo -e "\n[+] Dificultades existentes: \n"
-  echo -e "\t${bright_blue} Dificultad: easy"
-  echo -e "\t${bright_yellow} Dificultad: medium"
-  echo -e "\t${bright_cyan} Dificultad: hard"
-  echo -e "\t${bright_red} Dificultad: insane"
-}
 
 function searchDifficulty(){
-  difficulty="$1"
-  difficulty=$(echo $difficulty | tr '[:upper:]' '[:lower:]')
- 
-  # Validar que la dificultad exista
-  if ! cat $PATH_ARCHIVE | grep -i "state: $difficulty" &>/dev/null; then
-    echo -e "\n${bright_red}[!] Dificultad no encontrada.${end}\n"
-    showAllDifficulty
-    exit 1
-  fi
-  
-  local total_machines=$(cat $PATH_ARCHIVE | grep -i "state: $difficulty" -B 3  | grep -oP "name: .*" | sed 's/name://' | wc -l)
 
-  [[ $help == true ]] && showAllDifficulty && exit 
+  difficulty="${1}"
 
-  [[ $difficulty == "easy" ]] && echo -e "${bright_magenta}[+]${end} ${bright_white}Listando máquinas cuya dificultad es${end}${bright_blue} $difficulty: \n${end}"
-  [[ $difficulty == "medium" ]] && echo -e "${bright_magenta}[+]${end} ${bright_white}Listando máquinas cuya dificultad es${end}${bright_yellow} $difficulty: \n${end}"
-  [[ $difficulty == "hard" ]] && echo -e "${bright_magenta}[+]${end} ${bright_white}Listando máquinas cuya dificultad es${end}${bright_cyan} $difficulty: \n${end}"
-  [[ $difficulty == "insane" ]] && echo -e "${bright_magenta}[+]${end} ${bright_white}Listando máquinas cuya dificultad es${end}${bright_red} $difficulty: \n${end}"
-  echo -e "${bright_yellow}[+]${bright_white} Máquinas totales:${bright_green} $total_machines${end}"
-
-    echo -e "\n${bright_yellow}[+]${bright_white} Plataforma HackTheBox:${end}"
-    tput setaf 2; echo; cat $PATH_ARCHIVE | grep -i "state: $difficulty" -B 3 | grep -i "platform: HackTheBox" -A 1 | grep -oP "name: .*" | sed 's/name://' | column
+  if [[ -z "${difficulty}" ]]; then 
     
-    echo -e "\n${bright_yellow}[+]${bright_white} Plataforma VulnHub:${end}"
-    tput setaf 3; echo; cat $PATH_ARCHIVE | grep -i "state: $difficulty" -B 3 | grep -i "platform: VulnHub" -A 1 | grep -oP "name: .*" | sed 's/name://' | column
+    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
 
+    helpPanel
+
+    exit 1 
+
+  fi 
+
+
+  content=$(jq -r --arg difficulty "$difficulty" '
+    def normalize(s):
+      s
+      | ascii_downcase
+      | gsub("á";"a")
+      | gsub("é";"e")
+      | gsub("í";"i")
+      | gsub("ó";"o")
+      | gsub("ú";"u")
+      | gsub("Á";"a")
+      | gsub("É";"e")
+      | gsub("Í";"i")
+      | gsub("Ó";"o")
+      | gsub("Ú";"u");
+
+    .tutorials[]
+    | select(normalize(.dificultad) == normalize($difficulty))
+    | (
+        "\u001b[1;38;2;255;255;255m" + .nombre + "\u001b[0m" + "\t" +
+        "\u001b[38;2;255;255;100m" + .ip + "\u001b[0m" + "\t" +
+        "\u001b[38;2;255;255;150m" + .sistemaOperativo + "\u001b[0m" + "\t" +
+        (
+          if normalize(.dificultad) == "facil" then "\u001b[38;2;100;255;100m"
+          elif normalize(.dificultad) == "media" then "\u001b[38;2;255;255;100m"
+          elif normalize(.dificultad) == "dificil" then "\u001b[38;2;255;100;100m"
+          elif normalize(.dificultad) == "insane" then "\u001b[38;2;180;100;255m"
+          else "\u001b[0m" end
+        ) + .dificultad + "\u001b[0m" + "\t" +
+        "\u001b[38;2;100;150;255m" + .videoUrl + "\u001b[0m"
+      )
+      ' "${PATH_ARCHIVE}" | column -t -s $'\t')
+  
+    if [[ -z "${content}" ]]; then 
+      error "Error" "No se encontro la dificultad indicada, lea al manual de ayuda."
+      helpPanel 
+      exit 1 
+    fi 
+
+  fzf --ansi \
+      --header="Máquinas $difficulty" \
+      --preview './s4vimachines.sh -m {1} | tail -n +3' \
+      --preview-window=${prev:-right}:50% \
+      --color=16 \
+      --prompt="❯ " \
+      --marker="✓ " \
+      --ignore-case \
+      --nth=1,2,3,4 \
+      --style full \
+      --bind 'enter:execute(./s4vimachines.sh -m {1})+abort' <<< "${content}" 
+
+  return 0
+ 
 }
 
 searchOsSystem(){
-  osSystem="$1"
-  osSystem="$(echo "$osSystem" | tr '[:upper:]' '[:lower:]')"
-  
-  if [[ -z "$osSystem" ]]; then
-    echo -e "\n${bright_red}[!] Es necesario introducir tu input de usuario!${end}"
-    return 1
-  fi
+  osSystem="${1}"
 
-  if ! cat $PATH_ARCHIVE | grep -i "os: $osSystem$" &>/dev/null; then
-    echo -e "\n${bright_red}[!] Sistema operativo no encontrado.${end}\n"
-    echo -e "\t${bright_white}Sistemas operativos disponibles:${end} ${bright_cyan}Linux${end} ${bright_white}-${end} ${bright_blue}Windows${end}"
+  if [[ -z "${osSystem}" ]]; then 
+    
+    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+
+    helpPanel
+
+    exit 1 
+
+  fi 
+
+
+  content=$(jq -r --arg osSystem "${osSystem}" '
+    def normalize(s):
+      s
+      | ascii_downcase
+      | gsub("á";"a")
+      | gsub("é";"e")
+      | gsub("í";"i")
+      | gsub("ó";"o")
+      | gsub("ú";"u")
+      | gsub("Á";"a")
+      | gsub("É";"e")
+      | gsub("Í";"i")
+      | gsub("Ó";"o")
+      | gsub("Ú";"u");
+
+    .tutorials[]
+    | select(normalize(.sistemaOperativo) == normalize($osSystem))
+    | (
+        "\u001b[1;38;2;255;255;255m" + .nombre + "\u001b[0m" + "\t" +
+        "\u001b[38;2;255;255;100m" + .ip + "\u001b[0m" + "\t" +
+        "\u001b[38;2;255;255;150m" + .sistemaOperativo + "\u001b[0m" + "\t" +
+        (
+          if normalize(.dificultad) == "facil" then "\u001b[38;2;100;255;100m"
+          elif normalize(.dificultad) == "media" then "\u001b[38;2;255;255;100m"
+          elif normalize(.dificultad) == "dificil" then "\u001b[38;2;255;100;100m"
+          elif normalize(.dificultad) == "insane" then "\u001b[38;2;180;100;255m"
+          else "\u001b[0m" end
+        ) + .dificultad + "\u001b[0m" + "\t" +
+        "\u001b[38;2;100;150;255m" + .videoUrl + "\u001b[0m"
+      )
+      ' "${PATH_ARCHIVE}" | column -t -s $'\t')
+
+  if [[ -z "${content}" ]]; then 
+    error "Error" "No se encontraron máquinas para los criterios dados, intentalo de nuevo mas tarde."
+    helpPanel 
     exit 1
-  fi
+  fi 
 
+  fzf --ansi \
+      --header="Máquinas ${osSystem}" \
+      --preview './s4vimachines.sh -m {1} | tail -n +3' \
+      --preview-window=${prev:-right}:50% \
+      --color=16 \
+      --prompt="❯ " \
+      --marker="✓ " \
+      --ignore-case \
+      --nth=1,2,3,4 \
+      --style full \
+      --bind 'enter:execute(./s4vimachines.sh -m {1})+abort' <<< "${content}"
 
-  echo -e "\n${bright_green}[+] Listando máquinas de Sistema Operativo: $osSystem\n${end}"
-  echo -e "${bright_cyan}[+]${bright_white} Máquinas de la plataforma HackTheBox:${end}"
-  tput setaf 2; echo; cat $PATH_ARCHIVE | grep -i "os: $osSystem$" -B 2 | grep -i "platform: HackTheBox" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
-  
-  echo -e "${bright_cyan}[+]${bright_white} Máquinas de la plataforma VulnHub:${end}"
-  tput setaf 3; echo; cat $PATH_ARCHIVE | grep -i "os: $osSystem$" -B 2 | grep -i "platform: VulnHub" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
+  return 0
+
 
 }
 
@@ -304,44 +424,29 @@ function log(){
 
 function s4vidownload(){
 
-  dest="${1:-$PATH_ARCHIVE}" 
-
   printf "\n"
-  
-  # Download the required file 
-  # Parameter -O indicates the Path (-o=output) 
-  # For example 
-  # wget https://downloadable.com/recurse.zip -O/path/to/file.zip 
-  # ---
-  #
-  # Parameter -nv (--no-verbose) then, wget just show the "necesary"
-  # Sorry if my english is so bad D:
-  
-  log "${bright_magenta}[+]${end}${bright_white} Extrayendo el archivo necesario de ${bright_blue}${url}${end}"
+    
+  log "${bright_magenta}[+]${end}${bright_white} Extrayendo el archivo necesario de el excel comunitario.\n${comment}Enlace al excel: https://docs.google.com/spreadsheets/d/1dzvaGlT_0xnT-PGO27Z_4prHgA8PHIpErmoWdlUrSoA${end}"
 
-  wget "${url}" -O"${dest}" -nv 
+  python3 downloader.py --path="${PATH_ARCHIVE}"
   
-  log "${bright_magenta}[+]${end}${bright_white} Modificando el archivo con expresiones regulares...${end}"
-  
-  
-  # No coments here :)
-   
-  js-beautify "${dest}" | tr -d "'\",[]{}" \
-     | sed -E 's|\\n| |g; s/^ *//' | sponge "${dest}" 2>&1 
+  echo -e "${green}[+]${end} ${bright_white}El archivo ${sky}${PATH_ARCHIVE}${end}${bright_white} se descargo sin problemas!\n${end}"
 
+  return 0
+  
 }
 
 function s4viupdate(){
   
-  printf "\n%b[+]%b %bEstamos en busca de actualizaciones...%b\n" "${bright_magenta}" "${end}" "${bright_white}" "${end}" 
-  
-  s4vidownload "${TMP_ARCHIVE}"
+  log "\n${bright_magenta}[+]${end} ${bright_white}Estamos en busca de actualizaciones...${end}\n"  
+
+  python3 downloader.py --path="${TMP_ARCHIVE}" 
 
   log "\n${bright_magenta}[+]${end} ${bright_white}Archivo ${bright_blue}${TMP_ARCHIVE##*/}${end}${bright_white} descargado y modificado con exito, se buscaran diferencias con ${bright_cyan}${PATH_ARCHIVE##*/}${end}\n"
 
   if cmp "${PATH_ARCHIVE}" "${TMP_ARCHIVE}" --quiet; then 
 
-    log "\n${bright_magenta}[+]${end} ${bright_white}No se detectaron actualizaciones, estas al día!${end}"
+    echo -e "\n${bright_magenta}[+]${end} ${bright_white}No se detectaron actualizaciones, estas al día!${end}"
 
     rm "${TMP_ARCHIVE}"
 
@@ -403,250 +508,921 @@ function updatefiles(){
   printf "\n"
 
   if ${download}; then 
-    echo -e "\n${bright_magenta}[+]${end} ${bright_white}Se procedera a descargar los recursos necesarios para hacer uso de esta herramienta.${end}"
+    echo -e "\n${bright_magenta}[+]${end} ${bright_white}Se procederan a descargar los recursos necesarios para hacer uso de esta herramienta.${end}"
     s4vidownload
   elif ${update}; then 
-    echo -e "\n${bright_magenta}[+]${end} ${bright_white}Se procedera a actualizar los recursos necesarios para mantenerte al día.${end}"
+    echo -e "\n${bright_magenta}[+]${end} ${bright_white}Se procederan a actualizar los recursos necesarios para mantenerte al día.${end}"
     s4viupdate 
   fi
 
 }
 
-: '
-Esta función funciona de la siguiente forma.
-Vamos a declarar una variable local, la cual valga 0 y vamos a ir incrementando su valor.
-Mientras que value, valga 0, entonces le sumaremos 1 a value y agarraremos una máquina aleatoria, de todas las que hay.
-Se agarra una máquina aleatoria usando shuf -n 1. Una vez que value valga 100, se revelara nuyestra máquina para jugar.
-Espero me haya dejado entender porque honestamente, a veces pienso que tengo autismo o TDAH. Me cuesta entender las cosas pero me esfuerzo.
+function error() {
 
-'
+    strip_ansi() {
+      echo -e "$1" | sed -E 's/\x1b\[[0-9;]*m//g'
+    }
 
-function random_machine(){
-  tput civis
-  local value=0
-    while [[ $value -le 100 ]]; do
-        machineName=$(cat $PATH_ARCHIVE | grep -i 'name: .*' | sed 's/name: //' | sed 's/^ *//' | shuf -n 1)
-        echo -ne "\r\033[K${bright_blue}[+]${bright_white} Tu máquina elegida es: ${bright_cyan}\"$machineName\"${end}"
-        ((value++))
+
+    local title_raw="${1:-Titulo}"
+    shift
+    local content="${*:?Debe proporcionar contenido}"
+
+    local border_color="\e[31m"   
+    local title_color="\e[6;41m"
+    local reset="\e[0m"
+
+    local title="${title_color}${title_raw}${reset}"
+
+    IFS=$'\n' read -rd '' -a lines <<< "$content"
+
+    local title_len=$(strip_ansi "$title_raw" | wc -c)
+    title_len=$((title_len - 1)) 
+
+    local max_content=0
+    for line in "${lines[@]}"; do
+        local stripped=$(strip_ansi "$line")
+        (( ${#stripped} > max_content )) && max_content=${#stripped}
     done
+
+    local max=$max_content
+    (( title_len > max )) && max=$title_len
+
+    echo -ne "${border_color}╭${reset}"
+    echo -ne "${title}"
+    printf "${border_color}"
+    for ((i=0; i<max-title_len+2; i++)); do printf "─"; done
+    printf "╮${reset}\n"
+
+    for line in "${lines[@]}"; do
+        local stripped=$(strip_ansi "$line")
+
+        printf "${border_color}│${reset} %-${max}s ${border_color}│${reset}\n" "$(printf "%b" "$line")"
+
+
+    done
+
+    printf "${border_color}╰"
+    for ((i=0; i<max+2; i++)); do printf "─"; done
+    printf "╯${reset}\n"
+}
+function advanced_search() {
+
+  > "${p}"
+
+  objects="${1}"
+  if [[ -z "${objects}" ]]; then 
+    
+    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+
+    helpPanel
+
+    exit 1 
+
+  fi 
+
+
+  jq --arg bold_match "${bold_match}" --arg bold_style "${bold_style}" --arg color_matches "${color_matches}" --arg color "${color}" --arg italic_match "${italic_match}" --arg italic_style "${italic_style}" --arg underline_style "${underline_style}" --arg underline_match "${underline_match}"  --argjson terms "$(printf '%s\n' ${objects} | jq -R -s -c 'split("\n")[:-1]')" '
+
+    def style($italic_match; $underline_match; $bold_match; $italic_style; $underline_style; $bold_style):
+
+      {
+        "true true true":    ($underline_style + $italic_style + $bold_style),
+        "true true false":   ($underline_style + $italic_style),
+        "true false true":   ($italic_style + $bold_style),
+        "true false false":  ($italic_style),
+
+        "false true true":   ($underline_style + $bold_style),
+        "false true false":  ($underline_style),
+
+        "false false true":  ($bold_style),
+        "false false false": $color
+      }[
+        ($italic_match + " " + $underline_match + " " + $bold_match)
+      ];
+
+
+    def highlight_lines($s):
+      $s
+      | split("\n")
+      | map(. as $line
+          | if ($terms | map( . as $t | ($line | test($t; "il")) ) | any)
+            then (
+              if $color_matches == "false"
+              then $line                
+
+              else "\($color)" + style($italic_match; $underline_match; $bold_match; $italic_style; $underline_style; $bold_style) + $line + "\u001b[0m"  
+
+              end
+            )
+            else $line
+            end
+        )
+      | join("\n");
+
+    [ .tutorials[]
+      | (to_entries
+          | map(select(.key != "ip" and .key != "videoUrl"))
+          | map(.value | tostring)
+          | join("\n")
+        ) as $text
+      | ($terms | map(. as $t | ($text | test($t; "il"))) | all) as $matched
+      | select($matched)
+      | (to_entries
+          | map(
+              if (.key != "ip" and .key != "videoUrl")
+              then .value |= tostring | .value |= highlight_lines(.)
+              else .
+              end
+            )
+          | from_entries
+        )
+    ]
+  ' "${PATH_ARCHIVE}" > "${p}"
+
+  jq 'map(
+        .nombre           |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+        .ip               |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+        .dificultad       |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+        .sistemaOperativo |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "")
+      )' "${p}" | sponge "${p}" 2>/dev/null 
   
-    tput cnorm && searchMachine "$machineName" 
+  results="$(jq -r '.[].nombre' ${p} | wc -l)"
+
+  if [[ ${results} -eq 0 ]]; then  
+    error "Error" "${bold}${bright_white}No se encontraron máquinas para los criterios dados.${end}"
+    helpPanel
+    rm "${p}" 2>/dev/null 
+    exit 1 
+
+  elif [[ "${results}" -eq 1 ]]; then 
+    ./.process_machine.sh "$(jq -r '.[].nombre' "${p}")"
+    rm "${p}"
     return 0
+  fi 
+
+  local preview 
+  local b
+
+  if ! "${color_matches}"; then 
+    preview='./s4vimachines.sh -m ${1} | tail -n +3'
+    b='enter:execute(./s4vimachines.sh -m ${1})+abort'
+  else 
+    preview='./.process_machine.sh ${1}'
+    b='enter:execute(./.process_machine.sh ${1})+abort'
+
+  fi 
+
+  jq -r --arg white "${bright_white}" '
+   .[] |
+   (
+     "\u001b[1;38;2;255;255;255m" + .nombre + "\u001b[0m" + "\t" +
+     "\u001b[38;2;255;255;100m" + .ip + "\u001b[0m" + "\t" +
+     "\u001b[38;2;255;255;150m" + .sistemaOperativo + "\u001b[0m" + "\t" +
+     (
+       if .dificultad == "Fácil" then "\u001b[38;2;100;255;100m"
+       elif .dificultad == "Media" then "\u001b[38;2;255;255;100m"
+       elif .dificultad == "Difícil" then "\u001b[38;2;255;100;100m"
+       elif .dificultad == "Insane" then "\u001b[38;2;180;100;255m"
+       else "\u001b[0m" end
+     ) + .dificultad + "\u001b[0m" + "\t" +
+     "\u001b[38;2;100;150;255m" + .videoUrl + "\u001b[0m"
+   )
+  ' "${p}" | column -t -s $'\t'  | \
+   fzf --ansi \
+       --header="Selecciona una máquina" \
+       --preview="${preview}" \
+       --preview-window="${prev:-right}":50% \
+       --color=16 \
+       --prompt="❯ " \
+       --marker="✓ " \
+       --ignore-case \
+       --nth=1,2,3,4 \
+       --style full \
+       --bind "${b}"
+
+  rm "${p}"
+  return 0
+
 }
 
-function searchPlatform(){
-  platform="$1"
-  
-  if ! cat $PATH_ARCHIVE | grep -i "platform: $platform" &>/dev/null; then
-    echo -e "\n[!] Error fatal, no se enctontro la plataforma: $platform"
-    exit 1
-  fi
 
-  if [[ -z "$platform" ]]; then
-    echo -e "\n${bright_red}[!] Es necesario introducir tu input de usuario!${end}"
-    return 1
-  fi
+function random_machine() {
+  objects="${1}"
+  #tput civis
+  local value=0
+  local spinner=('⠋' '⠙' '⠹' '⠸' '⠼' '⠴' '⠦' '⠧' '⠇' '⠏')
 
+  # Si mandamos a buscar una máquina aleatoria y ya 
+  function callout_withoutObjects(){
 
-  if [[ "$confirm_act" == false ]]; then 
-    if [[ "$platform" =~ ^[Hh] ]]; then
-      echo -e "\n${bright_green}[+]${bright_white} Listando máquinas de la plataforma HackTheBox: ${end}"
-      tput setaf 2; echo; cat $PATH_ARCHIVE | grep -i "platform: $platform" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
-    elif [[ "$platform" =~ ^[Pp] ]]; then
-      echo -e "\n${bright_yellow}[+]${bright_white} Listando máquinas de la plataforma PortSwigger: ${end}"
-      tput setaf 3 && tput bold; echo; cat $PATH_ARCHIVE | grep -i "platform: $platform" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo
-    else
-      echo -e "\n${yellow}[+]${bright_white} Listando máquinas de la plataforma VulnHub: ${end}"
-       tput setaf 3; echo; cat $PATH_ARCHIVE | grep -i "platform: $platform" -A 1 | grep -oP "name: .*" | sed 's/name://' | column; echo   
-    fi
-  fi
+    machines="$(jq -r '.tutorials[].nombre' ${PATH_ARCHIVE})"
 
-  if [[ "$confirm_act" == true ]]; then
-    cat $PATH_ARCHIVE | grep -i "platform: $platform" -A 1 | grep -o 'name: .*' | sed 's/name: //' | while read machineName; do
-          searchMachine "$machineName"
+    # Buscamos una máquina al azar de todas las que pueden haber...
+    machineName="$(jq -r '.tutorials[].nombre' "${PATH_ARCHIVE}" | shuf -n 1)"
+
+    while [[ $value -le "${recoils}" ]]; do
+        local spin=${spinner[$((value % ${#spinner[@]}))]}
+        machineName=$(shuf -n 1 <<< "${machines}")
+        echo -ne "\r\033[K${pink}${spin}${bright_white} Tu máquina elegida es: ${bright_cyan}\"$machineName\"${end}"
+        ((value++))
+        sleep 0.03
     done
-  fi
+    echo -ne "\r\033[K${pink}[+]${bright_white} Tu máquina elegida es: ${bright_cyan}\"$machineName\"${end}"; echo 
+
+    searchMachine "${machineName}" | tail -n+3
+    
+    exit 0 
+
+  }
+
+  [[ -z "${objects}" ]] && callout_withoutObjects  
+
+  # Si indicamos parametros haremos una busqueda avanzada que nos dara un total de máquinas. 
+  # De todas esas máquinas elegiremos solo una.
+  # Llegaremos aqui SOLO si indicamos que queremos color-matches
+
+  function callout_withMatchesAndObjects(){
+
+    > "${p}"
+
+    jq --arg color_matches "${color_matches}" --arg color "${color}" --arg italic_match "${italic_match}" --arg italic_style "${italic_style}" --arg underline_style "${underline_style}" --arg underline_match "${underline_match}" --arg bold_match "${bold_match}" --arg bold_style "${bold_style}"  --argjson terms "$(printf '%s\n' ${objects} | jq -R -s -c 'split("\n")[:-1]')" '
+
+
+    def style($italic_match; $underline_match; $bold_match; $italic_style; $underline_style; $bold_style):
+
+      {
+        "true true true":    ($underline_style + $italic_style + $bold_style),
+        "true true false":   ($underline_style + $italic_style),
+        "true false true":   ($italic_style + $bold_style),
+        "true false false":  ($italic_style),
+
+        "false true true":   ($underline_style + $bold_style),
+        "false true false":  ($underline_style),
+
+        "false false true":  ($bold_style),
+        "false false false": $color
+      }[
+        ($italic_match + " " + $underline_match + " " + $bold_match)
+      ];
+
+
+      def highlight_lines($s):
+        $s
+        | split("\n")
+        | map(. as $line
+            | if ($terms | map( . as $t | ($line | test($t; "il")) ) | any)
+              then (
+                if $color_matches == "false"
+                then $line                
+                else "\($color)" + style($italic_match; $underline_match; $bold_match; $italic_style; $underline_style; $bold_style) + $line + "\u001b[0m"  
+                end
+              )
+              else $line
+              end
+          )
+        | join("\n");
+
+      [ .tutorials[]
+        | (to_entries
+            | map(select(.key != "ip" and .key != "videoUrl"))
+            | map(.value | tostring)
+            | join("\n")
+          ) as $text
+        | ($terms | map(. as $t | ($text | test($t; "il"))) | all) as $matched
+        | select($matched)
+        | (to_entries
+            | map(
+                if (.key != "ip" and .key != "videoUrl")
+                then .value |= tostring | .value |= highlight_lines(.)
+                else .
+                end
+              )
+            | from_entries
+          )
+      ]
+    ' "${PATH_ARCHIVE}" > "${p}"
+
+    jq 'map(
+          .nombre           |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+          .ip               |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+          .dificultad       |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+          .sistemaOperativo |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "")
+        )' "${p}" | sponge "${p}"
+  local total=$(jq -r '.[].nombre' "${p}" | wc -l 2>/dev/null) 
+
+  if [[ -z "${total}" || "${total}" -eq 0 ]]; then 
+
+    error "Se tenso!" "${bright_white}No se encontraron máquinas para los objetos introducidos.${end}"
+    
+    rm "${p}" 2>/dev/null
+
+    helpPanel
+
+    exit 1 
+  fi 
+
+  if [[ "${total}" -eq 1 ]]; then 
+    local machineName="$(jq -r '.[].nombre' ${p})"
+    searchMachine "${machineName}"
+  else 
+
+    local machines="$(jq -r '.[].nombre' ${p})"
+
+    # Buscamos una máquina al azar de todas las que pueden haber...
+    local machineName="$(jq -r '.[].nombre' "${p}" | shuf -n 1)"
+
+    while [[ $value -le "${recoils}" ]]; do
+        local spin=${spinner[$((value % ${#spinner[@]}))]}
+        machineName=$(shuf -n 1 <<< "${machines}")
+        echo -ne "\r\033[K${pink}${spin}${bright_white} Tu máquina elegida es: ${bright_cyan}\"$machineName\"${end}"
+        ((value++))
+        sleep 0.03
+    done
+    echo -ne "\r\033[K${pink}[+]${bright_white} Tu máquina elegida es: ${bright_cyan}\"$machineName\"${end}"; echo 
+    results=$(jq -r --arg icon_color "${icon_color}" --arg icon "${icon}" --arg name "${machineName}" --arg blue "${bright_blue}" --arg end "${end}" --arg bright_cyan "${bright_cyan}" --arg bright_magenta "${bright_magenta}" --arg bright_white "${bright_white}" '
+
+    .[]
+    | select((.nombre | ascii_downcase) == ($name | ascii_downcase))
+    | 
+    (
+      "\(.nombre)" as $n |
+      "\(.certificaciones)" as $c |
+      "\(.tecnicas)" as $t |
+      "\(.videoUrl)" as $writeup |
+      "\(.ip)" as $addr |
+      "Nombre: \(.nombre)" as $line1 |
+      "IP: \(.ip)" as $line2 |
+      "SO: \(.sistemaOperativo)" as $line3 |
+      "Dificultad: \(.dificultad)" as $line4 |
+
+      [$line1, $line2, $line3, $line4] 
+
+      | map(length) 
+      | max as $maxLen |
+
+      def pad($text): $text + (" " * ($maxLen - ($text | length))) ;
+
+      def paint($text):
+        ($text | split(":") | .[0] as $k | .[1] as $v |
+          "\($bright_magenta)\($k):\($bright_white)\($v)\($blue)") ;
+
+      "\($blue)╭" +
+      "\\033]8;;\($writeup)\\033\\\\\($bright_cyan)\($n)\\033[0m\\033]8;;\\033\\\\" + "\($blue)─" + ("─" * (($maxLen + 2) - ($n | length))) + "─╮\n" +
+
+      "│ " + "\($bright_magenta)▌\($blue)" + paint(pad($line2)) + " " + " │\n" +
+      "│ " + "\($bright_magenta)▌\($blue)" + paint(pad($line3)) + " " + " │\n" +
+      "│ " + "\($bright_magenta)▌\($blue)" + paint(pad($line4)) + " " + " │\n" +
+      "╰" + ("─" * ($maxLen + 2)) + "──" + "╯\n" + 
+      "\u001b[35mCertificaciones:\u001b[0m\n" +
+      (($c // "") 
+      | split("\n") 
+      | map("\($icon_color)\($icon) \u001b[97m" + . + "\u001b[0m") 
+      | join("\n")) +
+      "\n\n\u001b[35mTécnicas:\u001b[0m\n" +
+
+      (($t // "")
+          | split("\n")
+          | map("\($icon_color)\($icon) \u001b[97m" + . + "\u001b[0m")
+          | join("\n")
+        ) +
+        "\n\n\u001b[35mVideo:\u001b[0m \u001b[97m\($writeup)\u001b[0m"
+    )
+
+    ' "${p:?Fatal error, variable p not exists!}") 
+
+    echo -e "${results:-Sin Resultados}"
+    
+    rm "${p}" 2>/dev/null
+
+  fi 
+
+
+
+    exit 0
+
+  }
+  [[ "${objects}" && "${color_matches}" == true ]] && callout_withMatchesAndObjects
+  
+  
+
+  function objectsCallout(){
+
+    > "${p}"
+    jq --arg color_matches "${color_matches}" --argjson terms "$(printf '%s\n' ${objects} | jq -R -s -c 'split("\n")[:-1]')" '
+      def highlight_lines($s):
+        $s
+        | split("\n")
+        | map(. as $line
+            | if ($terms | map( . as $t | ($line | test($t; "il")) ) | any)
+              then (
+                if $color_matches == "false"
+                then $line                # sin color
+                else "\u001b[1;33m" + $line + "\u001b[0m"  # con color
+                end
+              )
+              else $line
+              end
+          )
+        | join("\n");
+
+      [ .tutorials[]
+        | (to_entries
+            | map(select(.key != "ip" and .key != "videoUrl"))
+            | map(.value | tostring)
+            | join("\n")
+          ) as $text
+        | ($terms | map(. as $t | ($text | test($t; "il"))) | all) as $matched
+        | select($matched)
+        | (to_entries
+            | map(
+                if (.key != "ip" and .key != "videoUrl")
+                then .value |= tostring | .value |= highlight_lines(.)
+                else .
+                end
+              )
+            | from_entries
+          )
+      ]
+    ' "${PATH_ARCHIVE}" > "${p}"
+
+    local total=$(jq -r '.[].nombre' "${p}" | wc -l 2>/dev/null) 
+
+    if [[ -z "${total}" || "${total}" -eq 0 ]]; then 
+      error "Error" "${bright_red}No se encontraron máquinas para los objetos dados!${end}"
+      helpPanel 
+      exit 1 
+    fi 
+
+    if [[ "${total}" -eq 1 ]]; then 
+      local machineName="$(jq -r '.[].nombre' ${p})"
+      searchMachine "${machineName}"
+    else 
+
+      local machines="$(jq -r '.[].nombre' ${p})"
+
+      # Buscamos una máquina al azar de todas las que pueden haber...
+      local machineName="$(jq -r '.[].nombre' "${p}" | shuf -n 1)"
+
+      while [[ $value -le "${recoils}" ]]; do
+          local spin=${spinner[$((value % ${#spinner[@]}))]}
+          machineName=$(shuf -n 1 <<< "${machines}")
+          echo -ne "\r\033[K${pink}${spin}${bright_white} Tu máquina elegida es: ${bright_cyan}\"$machineName\"${end}"
+          ((value++))
+          sleep 0.03
+      done
+      echo -ne "\r\033[K${pink}[+]${bright_white} Tu máquina elegida es: ${bright_cyan}\"$machineName\"${end}"; echo 
+
+      searchMachine "${machineName}" | tail -n+3
+      
+      exit 0 
+
+    fi 
+
+    rm "${p}" >/dev/null
+    
+  }
+
+  [[ "${objects}" ]] && objectsCallout
 
 }
 
 function Get_cert(){
-    certificate="$1"
-    output=$(echo "./addFuncs/getCertificates.sh" "$certificate" | bash)  # Captura la salida del script
 
-   if [[ -z "$certificate" ]]; then
-    echo -e "\n${bright_red}[!] Es necesario introducir una cadena valida.${end}"
-    exit 1
-   fi
+  certificate="${1}"
+
+  if [[ -z "${certificate}" ]]; then 
     
+    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
 
-    if [[ -z "$output" ]]; then  # Verifica si la salida no está vacía
-      echo -e "\n${bright_red}[!] No se encontraron matches: $certificate${end}"
-      return 1
-    fi
+    helpPanel
+
+    exit 1 
+
+  fi 
   
-    
-    echo -e "\n${bright_blue}[+]${end} ${bright_white}Listando máquinas que dispongan de los certificados ${bright_cyan}$certificate${bright_white}.${end}\n"
-    echo "./addFuncs/getCertificates.sh ""$certificate" | bash
-    if [[ "$confirm_act" == false ]]; then
-      rm /tmp/all_machines.txt 2>/dev/null
-    else
-      while read machine; do
-        searchMachine "$machine"
-      done < /tmp/all_machines.txt
-      rm /tmp/all_machines.txt 2>/dev/null
-    fi
+  > "${p}"
+
+  jq --arg bold_match "${bold_match}" --arg bold_style "${bold_style}" --arg color_matches "${color_matches}" --arg color "${color}" --arg italic_match "${italic_match}" --arg italic_style "${italic_style}" --arg underline_style "${underline_style}" --arg underline_match "${underline_match}"  --argjson terms "$(printf '%s\n' ${certificate} | jq -R -s -c 'split("\n")[:-1]')" '
+
+    def style($italic_match; $underline_match; $bold_match; $italic_style; $underline_style; $bold_style):
+
+      {
+        "true true true":    ($underline_style + $italic_style + $bold_style),
+        "true true false":   ($underline_style + $italic_style),
+        "true false true":   ($italic_style + $bold_style),
+        "true false false":  ($italic_style),
+
+        "false true true":   ($underline_style + $bold_style),
+        "false true false":  ($underline_style),
+
+        "false false true":  ($bold_style),
+        "false false false": $color
+      }[
+        ($italic_match + " " + $underline_match + " " + $bold_match)
+      ];
+
+
+    def highlight_lines($s):
+      $s
+      | split("\n")
+      | map(. as $line
+          | if ($terms | map( . as $t | ($line | test($t; "il")) ) | any)
+            then (
+              if $color_matches == "false"
+              then $line                
+
+              else "\($color)" + style($italic_match; $underline_match; $bold_match; $italic_style; $underline_style; $bold_style) + $line + "\u001b[0m"  
+
+              end
+            )
+            else $line
+            end
+        )
+      | join("\n");
+
+    [ .tutorials[]
+      | (to_entries
+          | map(select(.key != "ip" and .key != "videoUrl"))
+          | map(.value | tostring)
+          | join("\n")
+        ) as $text
+      | ($terms | map(. as $t | ($text | test($t; "il"))) | all) as $matched
+      | select($matched)
+      | (to_entries
+          | map(
+              if (.key != "ip" and .key != "videoUrl" and .key != "nombre" and .key != "sistemaOperativo" and .key != "dificultad" and .key != "tecnicas")
+              then .value |= tostring | .value |= highlight_lines(.)
+              else .
+              end
+            )
+          | from_entries
+        )
+    ]
+  ' "${PATH_ARCHIVE}" > "${p}"
+
+  jq 'map(
+        .nombre           |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+        .ip               |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+        .dificultad       |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+        .sistemaOperativo |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "")
+      )' "${p}" | sponge "${p}" 2>/dev/null 
+  
+
+  total="$(jq -r '.[].nombre' ${p} | wc -l 2>/dev/null)"
+  
+  if [[ "${total}" -eq 0 ]]; then 
+    error "Error" "No se encontraron máquinas para las técnicas dadas."
+    helpPanel 
+    rm "${p}" 2>/dev/null 
+    exit 1 
+  fi 
+  
+  if [[ "${total}" -eq 1 ]]; then 
+    machineName=$(jq -r '.[].nombre' ${p})
+
+    if "${color_matches}"; then 
+      ./.process_machine.sh "${machineName}"
+    else 
+      searchMachine "${machineName}"
+    fi 
+
+    exit 0 
+    rm "${p}" 2>/dev/null
+
+  fi 
+
+  if ! "${color_matches}"; then 
+    preview='./s4vimachines.sh -m ${1} | tail -n +3'
+    b='enter:execute(./s4vimachines.sh -m ${1})+abort'
+  else 
+    preview='./.process_machine.sh ${1}'
+    b='enter:execute(./.process_machine.sh ${1})+abort'
+
+  fi 
+
+
+  jq -r --arg white "${bright_white}" '
+   .[] |
+   (
+     "\u001b[1;38;2;255;255;255m" + .nombre + "\u001b[0m" + "\t" +
+     "\u001b[38;2;255;255;100m" + .ip + "\u001b[0m" + "\t" +
+     "\u001b[38;2;255;255;150m" + .sistemaOperativo + "\u001b[0m" + "\t" +
+     (
+       if .dificultad == "Fácil" then "\u001b[38;2;100;255;100m"
+       elif .dificultad == "Media" then "\u001b[38;2;255;255;100m"
+       elif .dificultad == "Difícil" then "\u001b[38;2;255;100;100m"
+       elif .dificultad == "Insane" then "\u001b[38;2;180;100;255m"
+       else "\u001b[0m" end
+     ) + .dificultad + "\u001b[0m" + "\t" +
+     "\u001b[38;2;100;150;255m" + .videoUrl + "\u001b[0m"
+   )
+  ' "${p}" | column -t -s $'\t'  | \
+  fzf --ansi \
+       --header="Selecciona una máquina" \
+       --preview="${preview}" \
+       --preview-window="${prev:-right}":50% \
+       --color=16 \
+       --prompt="❯ " \
+       --marker="✓ " \
+       --ignore-case \
+       --nth=1,2,3,4 \
+       --style full \
+       --bind "${b}"
+
+  rm "${p}"
+
 }
 
 function searchSkill(){
-  skill="$1"
-  output=$(echo "./addFuncs/getSkills.sh" "$skill" | bash)  # Captura la salida del script
+
+  skill="${1}"
+
+  if [[ -z "${skill}" ]]; then 
+    
+    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+
+    helpPanel
+
+    exit 1 
+
+  fi 
+
+  
+  > "${p}"
+
+  jq --arg bold_match "${bold_match}" --arg bold_style "${bold_style}" --arg color_matches "${color_matches}" --arg color "${color}" --arg italic_match "${italic_match}" --arg italic_style "${italic_style}" --arg underline_style "${underline_style}" --arg underline_match "${underline_match}"  --argjson terms "$(printf '%s\n' ${skill} | jq -R -s -c 'split("\n")[:-1]')" '
+
+    def style($italic_match; $underline_match; $bold_match; $italic_style; $underline_style; $bold_style):
+
+      {
+        "true true true":    ($underline_style + $italic_style + $bold_style),
+        "true true false":   ($underline_style + $italic_style),
+        "true false true":   ($italic_style + $bold_style),
+        "true false false":  ($italic_style),
+
+        "false true true":   ($underline_style + $bold_style),
+        "false true false":  ($underline_style),
+
+        "false false true":  ($bold_style),
+        "false false false": $color
+      }[
+        ($italic_match + " " + $underline_match + " " + $bold_match)
+      ];
+
+
+    def highlight_lines($s):
+      $s
+      | split("\n")
+      | map(. as $line
+          | if ($terms | map( . as $t | ($line | test($t; "il")) ) | any)
+            then (
+              if $color_matches == "false"
+              then $line                
+
+              else "\($color)" + style($italic_match; $underline_match; $bold_match; $italic_style; $underline_style; $bold_style) + $line + "\u001b[0m"  
+
+              end
+            )
+            else $line
+            end
+        )
+      | join("\n");
+
+    [ .tutorials[]
+      | (to_entries
+          | map(select(.key != "ip" and .key != "videoUrl"))
+          | map(.value | tostring)
+          | join("\n")
+        ) as $text
+      | ($terms | map(. as $t | ($text | test($t; "il"))) | all) as $matched
+      | select($matched)
+      | (to_entries
+          | map(
+              if (.key != "ip" and .key != "videoUrl" and .key != "nombre" and .key != "sistemaOperativo" and .key != "dificultad" and .key != "certificaciones")
+              then .value |= tostring | .value |= highlight_lines(.)
+              else .
+              end
+            )
+          | from_entries
+        )
+    ]
+  ' "${PATH_ARCHIVE}" > "${p}"
+
+  jq 'map(
+        .nombre           |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+        .ip               |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+        .dificultad       |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "") |
+        .sistemaOperativo |= gsub("(\u001b|\\\\u001b)\\[[0-9;]*[A-Za-z]"; "")
+      )' "${p}" | sponge "${p}" 2>/dev/null 
   
 
-  if [[ -z "$skill" ]]; then
-    echo -e "\n${bright_red}[!] Es necesario introducir una cadena valida.${end}"
-    exit 1
-  fi
+  total="$(jq -r '.[].nombre' ${p} | wc -l 2>/dev/null)"
+  
+  if [[ "${total}" -eq 0 ]]; then 
+    error "Error" "No se encontraron máquinas para las técnicas dadas."
+    helpPanel 
+    rm "${p}" 2>/dev/null 
+    exit 1 
+  fi 
+  
+  if [[ "${total}" -eq 1 ]]; then 
+    machineName=$(jq -r '.[].nombre' ${p})
 
-  if [[ -z "$output" ]]; then  # Verifica si la salida no está vacía
-    echo -e "\n${bright_red}[!] No se encontraron matches: $skill${end}"
-    return 1
-  fi
+    if "${color_matches}"; then 
+      ./.process_machine.sh "${machineName}"
+    else 
+      searchMachine "${machineName}"
+    fi 
 
-  echo -e "\n${bright_blue}[+]${end} ${bright_white}Listando máquinas que dispongan de skill ${bright_cyan}$skill${bright_white}.${end}\n"
-  echo "./addFuncs/getSkills.sh ""$skill" | bash
-  if [[ "$confirm_act" == false ]]; then
-    rm /tmp/all_machines.txt 2>/dev/null
-  else
-      while read machine; do
-        searchMachine "$machine"
-      done < /tmp/all_machines.txt
-      rm /tmp/all_machines.txt 2>/dev/null
-  fi
+    exit 0 
+    rm "${p}" 2>/dev/null
+
+  fi 
+
+  if ! "${color_matches}"; then 
+    preview='./s4vimachines.sh -m ${1} | tail -n +3'
+    b='enter:execute(./s4vimachines.sh -m ${1})+abort'
+  else 
+    preview='./.process_machine.sh ${1}'
+    b='enter:execute(./.process_machine.sh ${1})+abort'
+
+  fi 
+
+
+  jq -r --arg white "${bright_white}" '
+   .[] |
+   (
+     "\u001b[1;38;2;255;255;255m" + .nombre + "\u001b[0m" + "\t" +
+     "\u001b[38;2;255;255;100m" + .ip + "\u001b[0m" + "\t" +
+     "\u001b[38;2;255;255;150m" + .sistemaOperativo + "\u001b[0m" + "\t" +
+     (
+       if .dificultad == "Fácil" then "\u001b[38;2;100;255;100m"
+       elif .dificultad == "Media" then "\u001b[38;2;255;255;100m"
+       elif .dificultad == "Difícil" then "\u001b[38;2;255;100;100m"
+       elif .dificultad == "Insane" then "\u001b[38;2;180;100;255m"
+       else "\u001b[0m" end
+     ) + .dificultad + "\u001b[0m" + "\t" +
+     "\u001b[38;2;100;150;255m" + .videoUrl + "\u001b[0m"
+   )
+  ' "${p}" | column -t -s $'\t'  | \
+  fzf --ansi \
+       --header="Selecciona una máquina" \
+       --preview="${preview}" \
+       --preview-window="${prev:-right}":50% \
+       --color=16 \
+       --prompt="❯ " \
+       --marker="✓ " \
+       --ignore-case \
+       --nth=1,2,3,4 \
+       --style full \
+       --bind "${b}"
+
+  rm "${p}"
 
 }
 
 function get_allMachines(){
-  
-  : '
-  Una vez capturado el campo "name:", nos quedamos solo con lo que quede despues, es decir reiniciamos el punto de matching
-  Esto se logra colocando un \K
-  wc -l nos sirve para contar cuantas lineas hay en un output, o archivo, podemos indicar lineas, palabras, etc. 
-  En este caso solo obtuve todas las máquinas, y con wc -l obtuve las lineas totales, si le aplicaba column probablemente petaba
-  '
-  local total_machines=$(cat $PATH_ARCHIVE | grep -oP "name:\K.*" | wc -l)
-  echo -e "\n${bright_cyan}[+]${bright_white} Listando todas las máquinas disponibles (${bright_blue}$total_machines${bright_white}):${end} "
-
-  # Para la plataforma de HackTheBox
-  local total_htb=$(cat $PATH_ARCHIVE | grep -i "platform: HackTheBox" -A 3 | grep -oP "name:\K.*" | wc -l)
-  echo -e "\n${bright_cyan}[+]${bright_white} Plataforma HackTheBox (${bright_green}$total_htb${bright_white}):${end} \n"
-  tput setaf 2 && cat $PATH_ARCHIVE | grep -i "platform: HackTheBox" -A 3 | grep -oP "name:\K.*"  | column
 
 
-  # Para la plataforma de VulnHub
-  local total_vulnhub=$(cat $PATH_ARCHIVE | grep -i "platform: VulnHub" -A 3 | grep -oP "name:\K.*" | wc -l)
-  echo -e "\n${bright_cyan}[+]${bright_white} Plataforma VulnHub (${bright_yellow}$total_vulnhub${bright_white}):${end} \n"
-  tput setaf 3 && cat $PATH_ARCHIVE | grep -i "platform: VulnHub" -A 3 | grep -oP "name:\K.*"  | column
-
-
-  # Para la plataforma de PortSwigger
-  local total_swigger=$(cat $PATH_ARCHIVE | grep -i "platform: PortSwigger" -A 3 | grep -oP "name:\K.*" | wc -l)
-  echo -e "\n${bright_cyan}[+]${bright_white} Plataforma PortSwigger (${bright_magenta}$total_swigger${bright_white}):${end} \n"
-  tput setaf 5 && cat $PATH_ARCHIVE | grep -i "platform: PortSwigger" -A 3 | grep -oP "name:\K.*"  | column
-
-}
-
-
-
-function advanced_search(){
- : '
- Hi
- '
-  objects="$1"
-
-#  output=$(echo "./addFuncs/advanced_search.sh " "$objects" | bash)
-  [[ -z "${objects}" ]] || echo -e "\n${bright_green}[+]${bright_white} Realizando la busqueda avanzada:${bright_cyan} \"$objects\"${end}" 
-
-  echo "./addFuncs/advanced_search.sh" "$objects" | bash
-
-  if [[ "$confirm_act" == true ]]; then
-    while IFS= read -r machine; do
-      searchMachine "$machine"
-    done < /tmp/machine_results
-    rm /tmp/machine_results 2>/dev/null
-    return 0
-  fi
-
-  rm /tmp/machine_results 2>/dev/null
+  jq -r --arg white "${bright_white}" '
+    .tutorials[] |
+    (
+      "\u001b[1;38;2;255;255;255m" + .nombre + "\u001b[0m" + "\t" +
+      "\u001b[38;2;255;255;100m" + .ip + "\u001b[0m" + "\t" +
+      "\u001b[38;2;255;255;150m" + .sistemaOperativo + "\u001b[0m" + "\t" +
+      (
+        if .dificultad == "Fácil" then "\u001b[38;2;100;255;100m"
+        elif .dificultad == "Media" then "\u001b[38;2;255;255;100m"
+        elif .dificultad == "Difícil" then "\u001b[38;2;255;100;100m"
+        elif .dificultad == "Insane" then "\u001b[38;2;180;100;255m"
+        else "\u001b[0m" end
+      ) + .dificultad + "\u001b[0m" + "\t" +
+      "\u001b[38;2;100;150;255m" + .videoUrl + "\u001b[0m"
+    )
+  ' "${PATH_ARCHIVE}" | column -t -s $'\t'  | \
+    fzf --ansi \
+        --header="Selecciona una máquina" \
+        --preview './s4vimachines.sh -m {1} | tail -n +3' \
+        --preview-window=${prev:-right}:50% \
+        --color=16 \
+        --prompt="❯ " \
+        --marker="✓ " \
+        --ignore-case \
+        --nth=1,2,3,4 \
+        --style full \
+        --bind 'enter:execute(./s4vimachines.sh -m ${1})+abort'
+    
   return 0
 }
 
-function searchOsDiff(){
-  osSystem="$1"
-  difficulty="$2"
+function validate_preview(){
   
-  exists_os=$(cat $PATH_ARCHIVE | grep -i "os: $osSystem")
-  exists_diff=$(cat $PATH_ARCHIVE | grep -i "state: $difficulty")
-  if [[ ! "$exists_os" || ! "$exists_diff"  ]]; then
-    echo -e "\n${bright_red}[!] No encontramos resultados para: $osSystem - $difficulty${end}"
-    echo -e "\n${bright_white}Sistemas operativos disponibles:${end} ${bright_cyan}Linux${end} ${bright_white}-${end} ${bright_blue}Windows${end}"
-    showAllDifficulty
-    exit 1
-  fi
-    
-  local total_htb=$(cat $PATH_ARCHIVE | grep -i "os: $osSystem" -B 2 -A 4 | grep -i "state: $difficulty" -B 3 | grep -i "platform: HackTheBox" -A 1 | grep -oP "name:\K.*" | wc -l)
-  if [[ "$total_htb" -eq 0 ]]; then
-    echo -e "\n${bright_black}[*] No se encontraron máquinas para la plataforma de HackTheBox.${end}\n"
-  else
-    echo -e "\n${bright_cyan}[+]${bright_white} Máquinas de la plataforma: HackTheBox (${bright_green}$total_htb${bright_white}):${end}" 
-    echo; tput setaf 2; cat $PATH_ARCHIVE | grep -i "os: $osSystem" -B 2 -A 4 | grep -i "state: $difficulty" -B 3 | grep -i "platform: HackTheBox" -A 1 | grep -oP "name:\K.*" | column
-  fi
-  
-  local total_vulnhub=$(cat $PATH_ARCHIVE | grep -i "os: $osSystem" -B 2 -A 4 | grep -i "state: $difficulty" -B 3 | grep -i "platform: VulnHub" -A 1 | grep -oP "name:\K.*" | wc -l)
-  if [[ "$total_vulnhub" -eq 0 ]]; then
-    echo -e "\n${bright_black}[*] No se encontraron máquinas en la plataforma de VulnHub.${end}\n"
-  else
-    echo -e "\n${bright_cyan}[+]${bright_white} Máquinas de la plataforma: VulnHub (${bright_yellow}$total_vulnhub${bright_white}):${end}" 
-    echo; tput setaf 3; cat $PATH_ARCHIVE | grep -i "os: $osSystem" -B 2 -A 4 | grep -i "state: $difficulty" -B 3 | grep -i "platform: VulnHub" -A 1 | grep -oP "name:\K.*" | column
-  fi
+  case "${prev}" in 
+    up|down|left|right)
+      true 
+      ;; 
+    *)
+      error "Parametro invalido" "El parametro de preview solo acepta 4 posibles modos para previsualización, el modo indicado no es valido en este momento."
+      helpPanel 
+      exit 1 
+
+  esac 
 
 }
 
-searchChallengue(){
-  challengue="${1}"
 
-  return 0 
+while [[ $1 ]]; do
+  case $1 in
+    -v|--verbose)
+      verbose_mode=true
+      ;;
+    -y|--yes)
+      confirm_act=true
+      ;;
+    -m|--machine)
+      machineName="$2"
+      ((parameter_counter+=1))
+      shift
+      ;;
+    -u|--update-db)
+      ((parameter_counter+=2))
+      ;;
+    -i|--ip-adress)
+      ip_addr="$2"
+      ((parameter_counter+=3))
+      shift
+      ;;
+    -d|--difficulty)
+      difficulty="$2"
+      ((parameter_counter+=4))
+      ((target_difficulty+=1))
+      shift
+      ;;
+    -o|--os)
+      osSystem="$2"
+      ((parameter_counter+=5))
+      ((target_os+=1))
+      shift
+      ;;
+    -w|--writeup)
+      writeup="$2"
+      ((parameter_counter+=6))
+      shift
+      ;;
+    -c|--cert)
+      certificate="$2"
+      ((parameter_counter+=7))
+      shift
+      ;;
+    -s|--skill)
+      skill="$2"
+      ((parameter_counter+=9))
+      shift
+      ;;
+    -a|--all-machines)
+      ((parameter_counter+=10))
+      ;;
+    --color-matches)
+      color_matches=true
+      ;; 
+    -A|--Advanced-search)
+      objects="$2"
+      ((parameter_counter+=11))
+      shift
+      ;;
+    --recoils)
+      recoils_input="${2:?Missing parameter recoils}"
+      recoils="${recoils_input}"
+      ;;
 
-}
+    -r|--random-machine)
+      objects="${2}"
+      ((parameter_counter+=12))
+      ;;
+    --preview|--preview=)
+      prev="${2}"
 
-while getopts ':w:o:b:d:i:m:c:huvyxrp:t:s:aA:C:' arg; do
-  case $arg in
-    x) exclude_banner=true;;
-    v) verbose_mode=true;;
-    y) confirm_act=true;;
-    m) machineName=$OPTARG; ((parameter_counter+=1));;
-    t) language="$OPTARG"; show_output_translate=true;;
-    b) browser="${OPTARG:-firefox}"; open_browser=true;[[ "$browser" == 'default' ]] && browser='firefox';;
-    u) ((parameter_counter+=2));;
-    i) ip_addr=$OPTARG; ((parameter_counter+=3));;
-    d) difficulty=$OPTARG; ((parameter_counter+=4)); ((target_difficulty+=1));;
-    o) osSystem=$OPTARG; ((parameter_counter+=5)); ((target_os+=1));;
-    w) writeup=$OPTARG; ((parameter_counter+=6));;
-    c) certificate="$OPTARG"; ((parameter_counter+=7));;
-    p) platform="$OPTARG"; ((parameter_counter+=8));;
-    s) skill="$OPTARG"; ((parameter_counter+=9));;
-    a) ((parameter_counter+=10));;
-    A) objects="$OPTARG"; ((parameter_counter+=11));;
-    r) ((parameter_counter+=12));;
-    C) challengue="${OPTARG}"; ((parameter_counter+=13));;
-    h) help=true;;
-    \?) echo -e "\n${bright_red}[!]${bright_white} Parametro invalido: ${bright_yellow}-$OPTARG${end}\n"; exit 1;;
+      validate_preview "${prev}"
+
+      ;;
+    -h|--help)
+      helpPanel 
+      exit 0
+      ;;
+    -*)
+      error "Parametro invalido" "${bright_red}[!]${bright_white} Parámetro inválido: ${bright_yellow}${1}${end}"
+      helpPanel
+      exit 1
+      ;;
   esac
+  shift
 done
 
 
 if [[ ! -f "$PATH_ARCHIVE" && ! "$parameter_counter" -eq 2 ]]; then
-  echo -e "\n${bright_red}[!]${bright_white} Necesitas actualizar las dependencias antes de usar este script!${end}"
-  echo -e "\n${bright_white}Solución: ${SELF}${bright_yellow} -u${end}"
+  error "Dependencias faltantes" "${bright_white}Base de datos ${bold}(${PATH_ARCHIVE})${end}${bright_white} no encontrada, actualiza dependencias para usar el script.${end}"
+  helpPanel
   exit 1
 elif [[ $parameter_counter -eq 2 ]]; then
   updatefiles
@@ -657,33 +1433,36 @@ shopt -s nocasematch
 
 if [[ $parameter_counter -eq 1 ]]; then
   searchMachine "$machineName"
-elif [[ "$target_difficulty" -eq 1 && $target_os -eq 1 ]]; then
-  searchOsDiff "$osSystem" "$difficulty"
 
 elif [[ $parameter_counter -eq 3 ]]; then
-  searchForIp "$ip_addr"
+  searchForIp "${ip_addr}"
+
 elif [[ $parameter_counter -eq 4 ]]; then
   searchDifficulty "$difficulty"
+
 elif [[ $parameter_counter -eq 5 ]]; then
   searchOsSystem "$osSystem"
+
 elif [[ $parameter_counter -eq 6 ]]; then
   showLink "$writeup"
+
 elif [[ "$parameter_counter" -eq 7 ]]; then
   Get_cert "$certificate"
-elif [[ "$parameter_counter" -eq 8 ]]; then
-  searchPlatform "$platform"
+
 elif [[ "$parameter_counter" -eq 9 ]]; then
   searchSkill "$skill"
+
 elif [[ "$parameter_counter" -eq 10 ]]; then
   get_allMachines
+
 elif [[ "$parameter_counter" -eq 11 ]]; then
   advanced_search "$objects"
+
 elif [[ "$parameter_counter" -eq 12 ]]; then
-  random_machine
-elif [[ "$parameter_counter" -eq 13 ]]; then 
-  searchChallengue "${challengue}"
+  random_machine "${objects}"
+
 else
+
   helpPanel
+
 fi
-
-
