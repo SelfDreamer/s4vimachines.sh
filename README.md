@@ -101,6 +101,9 @@ Si queremos listar parametros solo tendremos que llamar al panel de ayuda de la 
 s4vimachines.sh --help 
 ```
 
+<img width="1920" height="395" alt="image" src="https://github.com/user-attachments/assets/621f6400-bb11-4c11-861c-611f67fb91b9" />
+
+
 ---
 
 <div align=center>Es todo, muchas gracias por tomarte el tiempo de leer. Y si tienes problemas, crea un ISSUE y te ayudare en lo que pueda.</div>
