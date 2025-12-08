@@ -16,6 +16,21 @@ Lo mejor de todo esto esto es que posee aún la función de busqueda avanzada y 
 > Actualmente la personalización no tiene tanto alcanze, pero a futuro se iran agregando cosas interesantes.
 
 ---
+# Ejemplos 
+### Resaltado de los matches encontrados.
+<img width="1884" height="787" alt="image" src="https://github.com/user-attachments/assets/2a189923-86d8-46f4-b78f-d530b439c546" />
+
+### Sin el resaltado
+<img width="1914" height="791" alt="image" src="https://github.com/user-attachments/assets/c4448851-8f82-4681-9811-da314fe8b3a8" />
+
+### Fzf con resaltado de matches (eJPT, como objeto)
+<img width="1903" height="989" alt="image" src="https://github.com/user-attachments/assets/34bcafc2-39a1-4670-917c-9b60a3853578" />
+
+### Fzf sin resaltado de matches (eJPT, como objeto)
+<img width="1908" height="998" alt="image" src="https://github.com/user-attachments/assets/8e08a4b5-fd22-4270-b90b-98deb53e9c69" />
+
+
+---
 
 # ¿infosecmachines a desaparecido?
 La respuesta corta es, no. 
