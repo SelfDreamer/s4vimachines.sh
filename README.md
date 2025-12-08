@@ -12,7 +12,7 @@ Esta herramienta se distingue de las demás herramientas que encontraras porque 
 Si bien otros buscadores usan la tipica de que listan todas las máquinas usando `column` y ya, en este caso la cosa es diferente, porque este script usa [fzf](https://github.com/junegunn/fzf) para mejorar la estética drasticamente a la hora de buscar por multiples máquinas. 
 Lo mejor de todo esto esto es que posee aún la función de busqueda avanzada y podemos aplicar un coloreado a la linea en donde salgan nuestros `matches`, como lo hacia `infosecmachines` en aquel entonces. Y todo esto, desde la terminal.
 
-> [!ATTENTION]
+> [!WARNING]
 > Actualmente la personalización no tiene tanto alcanze, pero a futuro se iran agregando cosas interesantes.
 
 ---
