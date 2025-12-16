@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script de bash para buscar máquinas que s4vitar va resolviendo.
 # Puedes meter este script en tu PATH para mas comodidad, deah. 
-
+ 
 ruta=$(realpath "${0}" | rev | cut -d'/' -f2- | rev)
 cd "${ruta}" || exit 1 
 
@@ -11,6 +11,9 @@ source Colors.sh
 source ./variables/global_variables.sh
 source ./config/appareance.sh
 
+# utils 
+source ./utils/ask_yes_no.sh
+source ./utils/messagebox.sh
 
 [[ ! -d "${DIRECTORY}" ]] && mkdir -p "${DIRECTORY}"
 
@@ -21,6 +24,7 @@ function def_handler(){
   [[ -f $TMP_ARCHIVE ]] && rm $TMP_ARCHIVE
   [[ -f $vulnhub_results ]] && rm $vulnhub_results
   [[ -f $htb_results ]] && rm $vulnhub_results
+  [[ -f "${p}" ]] && rm "${p}"
   tput cnorm
   exit 1
 }
@@ -88,7 +92,7 @@ function helpPanel(){
     " ${green_water}-w${reset} ${light_blue} --writeup${reset} ${opt}MACHINE${reset}                 ${birght_white}Obtener solo el ${subrayado}writeup${birght_white} de una máquina.${reset}"
     " ${green_water}-s${reset} ${light_blue} --skill${reset} ${opt}SKILLS${reset}                    ${birght_white}Listar máquinas por ${subrayado}skill${birght_white} o ténicas que se requieran para resolver la máquina.${reset} ${comment}e.g: 'Unicode SQLI Waf Bypass Kerberos'${reset}"
     " ${green_water}-c${reset} ${light_blue} --cert${reset} ${opt}CERTS${reset}                      ${birght_white}Listar todas las máquinas que te preparen para uno o mas ${subrayado}certificados${birght_white}.${reset} ${comment} e.g: 'OSCP eJPT eWPTxv2'${reset}"
-    " ${green_water}-p${reset} ${light_blue} --preview${reset} ${opt}POSITION${reset}                ${birght_white}Indicar la posisión en la que saldra la ${underline}preview${end}${bright_wite} de fzf.${ed}${comment} Parametros: ${bold}up|down|right|left${end}"
+    " ${green_water}  ${reset} ${light_blue} --preview${reset} ${opt}POSITION${reset}                ${birght_white}Indicar la posisión en la que saldra la ${underline}preview${end}${bright_wite} de fzf.${ed}${comment} Parametros: ${bold}up|down|right|left${end}"
 
     " ${green_water}-A${reset} ${light_blue} --Advanced-search${reset} ${opt}OBJECTS${reset}         ${birght_white}Realizar una ${subrayado}busqueda avanzada${birght_white}.${reset} ${comment}e.g: 'OSCP Windows Insane SQLI'${reset}"
     " ${green_water}-a${reset} ${light_blue} --all-machines${reset}                    ${birght_white}Mostrar todas las máquinas existentes en la base de datos.${reset}"
@@ -145,11 +149,14 @@ function searchMachine(){
   machineName="${1}"
 
   if [[ -z "${machineName}" ]]; then 
-    error "Error" "${bright_white}Esta función require de un parametro el cual no se indico!${end}"
+    messagebox -title "Error" -Type "Error" -message "Esta función require de un parametro, el cual no se ha indicado!"
     helpPanel
     exit 1 
   fi
 
+  if [[ "${machineName}" == "%{random}%" ]]; then 
+    machineName=$(jq -r '.tutorials[]["nombre"]' < "${PATH_ARCHIVE}" | shuf -n1) 
+  fi 
 
   results=$(jq -r --arg icon_color "${icon_color}" --arg name "${machineName}" --arg icon "${icon}" --arg blue "${bright_blue}" --arg end "${end}" --arg bright_cyan "${bright_cyan}" --arg bright_magenta "${bright_magenta}" --arg bright_white "${bright_white}" '
 
@@ -204,7 +211,7 @@ function searchMachine(){
 
   if [[ -z "${results}" ]]; then 
 
-    error "Error" "${bright_white}No se encontro la máquina ${bold}${machineName}${end}${bright_white}, intentalo de nuevo mas tarde!${end}"
+    messagebox -title "Error" -message "${bright_white}No se encontro la máquina ${bold}${machineName}${end}${bright_white}, intentalo de nuevo mas tarde!${end}" -type Error
 
     helpPanel
 
@@ -225,7 +232,7 @@ function searchForIp() {
 
   if [[ -z "${ip_addr}" ]]; then 
     
-    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+    messagebox -title "Argumentos faltantes" -message "Esta función requiere de al menos, un argumento" -type Error 
 
     helpPanel
 
@@ -238,10 +245,29 @@ function searchForIp() {
   
   if [[ -z "${machineName}" ]]; then 
 
-    error "Error" "${bright_red}Error fatal, la dirección ip indicada no se encontro en la base de datos, se tenso!${end}" 
+    messagebox -type "Error" -message "Error fatal, la dirección ip indicada no se encontro en la base de datos, se tenso!" -title "Error"
     helpPanel
     exit 1
   
+  fi 
+
+  if [[ "${confirm_act}" == true ]]; then 
+    searchMachine "${machineName}"
+    exit 0
+  fi 
+    
+  message="""
+  La IP ${ip_addr} le pertenece a la máquina ${machineName}
+  ¿Deseas listar las propiedades de la máquina ${machineName}?"""
+  resp=$(ask_yes_no -message "${message}" -options "Si,No")
+  
+  if [[ "${resp}" == "No" ]]; then 
+    msg="""Operación cancelada por el usuario ${USER}.
+Puedes pasar de esto automaticamente con el parametro ${italic_style}${bold_style}--no-confirm${end}"""
+    messagebox -type Hint \
+    -message "${msg}" \
+    -title "Info"
+    exit 
   fi 
 
   searchMachine "${machineName}"
@@ -255,7 +281,7 @@ function searchDifficulty(){
 
   if [[ -z "${difficulty}" ]]; then 
     
-    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+    messagebox -title "Argumentos faltantes" -message "Esta función requiere de al menos, ${bold_style}un ${underline_style}argumento${end}." -type Error 
 
     helpPanel
 
@@ -297,7 +323,10 @@ function searchDifficulty(){
       ' "${PATH_ARCHIVE}" | column -t -s $'\t')
   
     if [[ -z "${content}" ]]; then 
-      error "Error" "No se encontro la dificultad indicada, lea al manual de ayuda."
+      messagebox \
+        -type "Error" \
+        -message "No se encontro la dificultad indicada, lea al manual de ayuda. ${comment}${italic_style}--help${end}" \
+        -title "Error"
       helpPanel 
       exit 1 
     fi 
@@ -323,7 +352,10 @@ searchOsSystem(){
 
   if [[ -z "${osSystem}" ]]; then 
     
-    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+    messagebox \
+      -title "Argumentos faltantes" \
+      -message "Esta función requiere de al menos, ${bold_style}un ${underline_style}argumento${end}." \
+      -type Error
 
     helpPanel
 
@@ -365,7 +397,20 @@ searchOsSystem(){
       ' "${PATH_ARCHIVE}" | column -t -s $'\t')
 
   if [[ -z "${content}" ]]; then 
-    error "Error" "No se encontraron máquinas para los criterios dados, intentalo de nuevo mas tarde."
+    all_so=$(jq -r '.tutorials[]["sistemaOperativo"]' ${PATH_ARCHIVE} | sort -u)
+    local so_content
+    for os in ${all_so}; do 
+      so_content+="""${icon_color}${icon}${end} ${bold_style}${os}${end}
+"""
+    done 
+    msg="""No se encontraron máquinas de SO: \"${bold_style}${italic_style}${osSystem}${end}\".
+Actualmente solo contamos con los ${bold_style}sistemas operativos${end}:
+${so_content}
+"""
+    messagebox \
+      -type "Error" \
+      -message "${msg}" \
+      -title "Error"
     helpPanel 
     exit 1
   fi 
@@ -387,28 +432,108 @@ searchOsSystem(){
 
 }
 
-function showLink(){
-  writeup="$1"
-  writeup=$(echo "$writeup" | tr '[:upper:]' '[:lower:]')
+to_seconds_to_date_yt(){
+  local seconds="${1:?}"
+  h=$((seconds / 3600))
+  m=$(((seconds % 3600) / 60))
+  s=$((seconds % 60))
 
-  if ! cat $PATH_ARCHIVE | grep -i "name: $writeup" &>/dev/null; then
-    echo -e "\n${bright_red}[!] Máquina no encontrada: $writeup${end}\n\n"
-    exit 1
-  fi
-  link=$(cat $PATH_ARCHIVE | grep -i "name: $writeup" -A  6 | grep -i "video: https:" | sed 's/video://' | sed 's/^ *//')
+  printf "%02d:%02d:%02d\n" "$h" "$m" "$s"
 
-  echo -e "\n${bright_cyan}[+]${end} ${bright_white}Writeup de la máquina${end} ${bright_green}$writeup${bright_white}: ${bright_blue}$link${end}\n" 
+}
+
+function write_rule_markdown(){
+
+  local rule=""
+
+  for i in $(seq 1 "$tty_largo"); do
+    echo -ne "${comment}$rule${end}"
+  done
+}
+
+function showLink(){  
+  local preffix="▌"
   
-  if [[ $open_browser == true ]]; then
-    if ! command -v $browser &>/dev/null; then
-      echo -e "\n${bg_bright_red}[!] Navegador invalido: $browser!${end}\n"
-      exit 1
-    fi
-    echo -e "\n${bright_cyan}[+]${bright_white} Abriendo el enlace:${bright_blue} $link en el navegador${bright_magenta} $browser${bright_white}...${end}\n"
-    $browser $link &>/dev/null & disown
-  fi
+  local machineName="${1}"
 
-  path_writeup="Writeups/$writeup"
+
+  [[ -z "${machineName}" ]] && messagebox -title "Error" -message "Esta función requiere de un argumento el cual no se ha indicado, vuelve a intentarlo de nuevo mas tarde!" -type Error \
+    && helpPanel \
+    && exit 1 
+
+  if [[ "${machineName}" == "%{random}%" ]]; then 
+    machineName=$(jq -r '.tutorials[]["nombre"]' < "${PATH_ARCHIVE}" | shuf -n1)
+  fi 
+
+
+  local data=$(jq -r --arg name "${machineName}" '.tutorials[] | select((.nombre | ascii_downcase) == ($name | ascii_downcase)) ' "${PATH_ARCHIVE}")
+  
+  [[ -z "${data}" ]] && messagebox -title "Error" -message "No se encontro el writeup para la máquina dada, intentalo de nuevo más tarde!" -type Error \
+    && helpPanel \
+    && exit 1
+
+  writeup=$(jq -r '.videoUrl' <<< "${data}")
+  machineName=$(jq -r '.nombre' <<< ${data})
+
+  echo -e "${bright_red}${bold}${preffix}${bright_white}${italic_style} Writeup de la máquina ${bold}${machineName}${end}${bright_white}:${bright_blue} ${writeup}${end}\n"
+
+  local data=$(curl -s "${writeup}" \
+| sed -n 's/.*ytInitialPlayerResponse = //p' \
+| sed 's/;$//' \
+| jq '.microformat.playerMicroformatRenderer' 2>/dev/null | jq -r '. | del(
+        .availableCountries,
+        .embed,
+        .linkAlternates,
+        .trackingParams
+        ) | 
+          {
+            title,
+            description, 
+            lengthSeconds,
+            uploadDate,
+            ownerChannelName, 
+            ownerProfileUrl, 
+            likeCount,
+            lengthSeconds
+          }') 
+
+  local tty_largo=$(stty size | awk '{print $2}')
+  
+  title=$(jq -r '.title["simpleText"]' <<< "${data}")
+  creator=$(jq -r '.ownerChannelName' <<< "${data}")
+  ownerProfileUrl=$(jq -r '.ownerProfileUrl' <<< "${data}")
+  likeCount=$(jq -r '.likeCount' <<< "${data}")
+  description=$(jq -r '.description.simpleText' <<< "${data}")
+  description=$(
+    printf "%b\n" "$description" |
+    sed -E '
+      s|^(.*https?://)|\x1b[33m'"$icon"' \x1b[0m\1|
+      s|(https?://[^[:space:]]+)|\x1b[36m\1\x1b[0m|g
+      s|#([A-Za-z0-9_-]+)|\x1b]8;;https://www.youtube.com/hashtag/\1\x1b\\\x1b[34m#\1\x1b[0m\x1b]8;;\x1b\\|g
+      s|([0-2][0-9]:[0-5][0-9])|\x1b[34m\1\x1b[0m|g
+    '
+  )
+  seconds=$(jq -r '.lengthSeconds' <<< "${data}")
+
+  total_time=$(to_seconds_to_date_yt "${seconds}")
+
+  write_rule_markdown
+  
+  echo -e "${icon_color}${icon}${end} ${bright_white}${bold}Título: ${title}${end}"
+
+  echo -e "${icon_color}${icon}${end} ${bright_white}${bold}Autor:${end} ${bright_blue}\033]8;;${ownerProfileUrl}\033\\@${creator}\033]8;;\033\\ ${end}"
+  echo -e "${icon_color}${icon}${end} ${bright_white}${bold}Likes:${end} ${bright_green}${underline_style}${likeCount}${end}"
+  echo -e "${icon_color}${icon}${end} ${bright_white}${bold}Duración: ${bright_cyan}${total_time}${end}"
+  
+  write_rule_markdown
+  
+  messagebox \
+    -title "Descripción" \
+    -message "${description}" \
+    -type Info  
+  
+
+
 }
 
 function log(){
@@ -423,45 +548,78 @@ function log(){
 }
 
 function s4vidownload(){
-
-  printf "\n"
+  local preffix="▌"
     
-  log "${bright_magenta}[+]${end}${bright_white} Extrayendo el archivo necesario de el excel comunitario.\n${comment}Enlace al excel: https://docs.google.com/spreadsheets/d/1dzvaGlT_0xnT-PGO27Z_4prHgA8PHIpErmoWdlUrSoA${end}"
+  local d=$(date '+%H:%M:%S')
 
-  python3 downloader.py --path="${PATH_ARCHIVE}"
-  
-  echo -e "${green}[+]${end} ${bright_white}El archivo ${sky}${PATH_ARCHIVE}${end}${bright_white} se descargo sin problemas!\n${end}"
+  log "${bright_magenta}${bold}${preffix}[${LINENO}] [${d}] DEBUG${end}${bright_white} Ejecutando el script downloader... ${comment}python3 downloader.py --path=${PATH_ARCHIVE}${end}"
 
-  return 0
+  local status_code=$(python3 downloader.py --path="${PATH_ARCHIVE}" 2>/dev/null)
+
+  local d=$(date '+%H:%M:%S')
+  log "${bright_magenta}${bold}${preffix}[${LINENO}] [${d}] DEBUG${end}${bright_white} El script se termino de ejecutar, vamos a ver si todo salio bien."
+
+  if [[ "${?}" -ne 0 ]]; then 
+    local d="$(date '+%H:%M:%S')"
+    log "${bright_red}${bold}${preffix}[${LINENO}] [${d}] ERROR${end} Se encontro un error al intentar descargar el archivo, vuelve a intentarlo mas tarde."
+    local d="$(date '+%H:%M:%S')"
+    log "${bright_magenta}${bold}${preffix}[${LINENO}] [${d}] DEBUG${end}${bright_white} Crea un ISSUE en GitHub para poder ayudarte, muchas gracias por leer."
+    tput cnorm
+    exit 1
+  fi
+  local d=$(date '+%H:%M:%S')
   
+  log "${bright_magenta}${bold}${preffix}[${LINENO}] [${d}] DEBUG${end} El archivo se descargo correctamente sin mostrar errores."
+  tput cnorm 
+
+  exit 0
+
 }
 
 function s4viupdate(){
+  local preffix="▌"
   
-  log "\n${bright_magenta}[+]${end} ${bright_white}Estamos en busca de actualizaciones...${end}\n"  
+  log "${bright_magenta}${preffix} [${LINENO}] DEBUG${end} Ejecutando el script para obtener la base de datos y compararla con la base de datos actualmente en uso...${comment} python3 downloader.py --path=${TMP_ARCHIVE}${end}"
+  local resp=$(python3 downloader.py --path="${TMP_ARCHIVE}" 2>/dev/null)
 
-  python3 downloader.py --path="${TMP_ARCHIVE}" 
+  log "${bright_magenta}${preffix} [${LINENO}] DEBUG${end} Verificando si no hay errores luego de descargarnos el archivo."
 
-  log "\n${bright_magenta}[+]${end} ${bright_white}Archivo ${bright_blue}${TMP_ARCHIVE##*/}${end}${bright_white} descargado y modificado con exito, se buscaran diferencias con ${bright_cyan}${PATH_ARCHIVE##*/}${end}\n"
-
+  if [[ "${?}" -ne 0 ]]; then 
+    log "${bright_red}${preffix} [${LINENO}] ERROR${end} No se pudo actualizar la base de datos."
+    log "${bright_green}${preffix} [${LINENO}] INFO${end} Crea un ISSUE en GitHub comentando este problema."
+    tput cnorm 
+    exit 1 
+  fi >&2 
+  
+  log "${bright_magenta}${preffix} [${LINENO}] DEBUG${end} Verificando si ${PATH_ARCHIVE##*/} y ${TMP_ARCHIVE##*/} son identicos o no."
   if cmp "${PATH_ARCHIVE}" "${TMP_ARCHIVE}" --quiet; then 
+    log "${bright_magenta}${preffix} [${LINENO}] DEBUG${end} No se han detectado actualizaciones, el archivo ${PATH_ARCHIVE##*/} y ${TMP_ARCHIVE##*/} son identicos."
+    log "${bright_green}${preffix} [${LINENO}] INFO${end} Se procedera a borrar el archivo temporal para no dejar basura en tu sistema."
 
-    echo -e "\n${bright_magenta}[+]${end} ${bright_white}No se detectaron actualizaciones, estas al día!${end}"
+    if rm "${TMP_ARCHIVE}" 2>/dev/null; then  
+      log "${bright_green}${preffix} [${LINENO}] INFO${end} Archivo borrado exitosamente, ten buen día!"
+      tput cnorm 
 
-    rm "${TMP_ARCHIVE}"
+      exit 0
+    fi 
 
-    return 0
+    log "${bright_red}${preffix} [${LINENO}] ERROR${end} No se pudo borrar ${TMP_ARCHIVE}."
+    tput cnorm 
+    exit 1 
  
   fi 
   
   # There are updates! 
-
-  printf "%b[+]%b Actualizaciones encontradas y realizadas!%b\n" "${bright_magenta}" "${bright_white}" "${end}"
+  log "${bright_magenta}${preffix} [${LINENO}] DEBUG${end} Se encontraron actualizaciones, se procedera a actualizar la base de datos."
   rm "${PATH_ARCHIVE}" && mv "${TMP_ARCHIVE}" "${PATH_ARCHIVE}"
+  log "${bright_green}${preffix} [${LINENO}] INFO${end} Acutlizaciones encontradas y realizadas, ten buen día."
+  tput cnorm 
+  exit 0
   
 }
 
 function updatefiles(){ 
+  local preffix="▌"
 
   tput civis
 
@@ -470,102 +628,59 @@ function updatefiles(){
 
   local update=false 
   local download=false 
+  local message
 
   if [[ ! -f "${PATH_ARCHIVE}" ]]; then 
-    prompt="read -n 1 -p $'${bright_white}El archivo ${bright_blue}${PATH_ARCHIVE##*/}${bright_white} no fue encontrado ¿Deseas bajarte el archivo? (Y/n)${end} ' response"
+    message="${bright_magenta}${bold}El archivo ${italic_style}${bold}${PATH_ARCHIVE##*/}${end}${bright_magenta}${bold} no existe ¿Deseas bajarlo?${end}"
     download=true
   elif [[ -f "${PATH_ARCHIVE}" ]]; then
-    prompt="read -n 1 -p $'${bright_white}El archivo ${bright_blue}${PATH_ARCHIVE##*/}${bright_white} existe ¿Deseas actualizarlo si lo requiere? (Y/n)${end} ' response"
+    message="${bright_magenta}${bold}El archivo ${italic_style}${bold}${PATH_ARCHIVE##*/}${end}${bright_magenta}${bold} existe ¿Deseas actualizarlo?${end}"
     update=true
   fi
 
+  if "${confirm_act}"; then 
 
-  # Put an option (-y) if the user entered the -y parameter 
-  "${confirm_act}" && prompt="$prompt <<< 'y' "
+    if "${download}"; then 
+      log "${bright_green}${bold}${preffix}[${LINENO}] INFO${end} No se encontro el archivo ${PATH_ARCHIVE##*/}, vamos a descargarlo."
+      log "${bright_magenta}${bold}${preffix}[${LINENO}] DEBUG${end}${bright_white} Descargando archivo...${end} ${comment}name=${PATH_ARCHIVE##*/}${end}"
+      s4vidownload
+    elif "${update}"; then 
+      
+      log "${bright_green}${preffix} [${LINENO}] INFO${end} El archivo ${italic_style}${PATH_ARCHIVE##*/}${end} existe, pero vamos a ver si hay actualizaciones..."
+      log "${bright_magenta}${preffix} [${LINENO}] DEBUG${end} Descargando archivo para realizar comparatorias...${comment} name=${TMP_ARCHIVE}${end}"
+
+      s4viupdate
+
+    fi 
+
+    exit 
+  fi 
   
-  eval "${prompt}"
+  local resp=$(ask_yes_no -message "${message}" -options "Si,No")
 
-  response=${response,,}
-  tput cnorm
-
-  [[ -z "${response}" ]] && printf "\n%b[!] Es necesario introducir una entrada de usuario valida!%b\n\n" "${bright_red}" "${end}" && return 1  
-
-  [[ "${response}" =~ ^[s] ]] && response="y"
+  if [[ "${resp}" == "No" ]]; then 
+    messagebox \
+      -type Warning \
+      -title "Operación cancelada" \
+      -message "Operación cancelada por el usuario ${underline}${bold_style}${USER}${end}"
+    exit 1
+  fi 
   
-  declare -A options=(
-    ["y"]="true"
-    ["n"]="echo -e \"\n${bright_red}[!] Operación cancelada por $USER\n${end}\"; exit 1"
-    )
-
-
-  [[ ! "${response}" =~ ^[yn] ]] && printf "\n%b[!] Opción desconocida!%b\n\n" "${bright_red}" "${end}" && return 1  
-
-
-  cmd="${options["${response}"]}"
-
-  bash -c "${cmd}" || return 1 
-
-  printf "\n"
-
-  if ${download}; then 
-    echo -e "\n${bright_magenta}[+]${end} ${bright_white}Se procederan a descargar los recursos necesarios para hacer uso de esta herramienta.${end}"
-    s4vidownload
-  elif ${update}; then 
-    echo -e "\n${bright_magenta}[+]${end} ${bright_white}Se procederan a actualizar los recursos necesarios para mantenerte al día.${end}"
-    s4viupdate 
-  fi
+  if [[ "${resp}" == "Si" ]]; then 
+    if "${download}"; then 
+      log "${bright_green}${bold}${preffix}[${LINENO}] INFO${end} No se encontro el archivo ${PATH_ARCHIVE##*/}, vamos a descargarlo."
+      log "${bright_magenta}${bold}${preffix}[${LINENO}] DEBUG${end}${bright_white} Descargando archivo...${end} ${comment}name=${PATH_ARCHIVE##*/}${end}"
+      s4vidownload
+    elif "${update}"; then 
+      log "${bright_green}${preffix} [${LINENO}] INFO${end} El archivo ${italic_style}${PATH_ARCHIVE##*/}${end} existe, pero vamos a ver si hay actualizaciones..."
+      log "${bright_magenta}${preffix} [${LINENO}] DEBUG${end} Descargando archivo para realizar comparatorias...${comment} name=${TMP_ARCHIVE}${end}"
+      s4viupdate 
+    fi 
+    exit 0 
+  fi 
 
 }
 
-function error() {
-
-    strip_ansi() {
-      echo -e "$1" | sed -E 's/\x1b\[[0-9;]*m//g'
-    }
-
-
-    local title_raw="${1:-Titulo}"
-    shift
-    local content="${*:?Debe proporcionar contenido}"
-
-    local border_color="\e[31m"   
-    local title_color="\e[6;41m"
-    local reset="\e[0m"
-
-    local title="${title_color}${title_raw}${reset}"
-
-    IFS=$'\n' read -rd '' -a lines <<< "$content"
-
-    local title_len=$(strip_ansi "$title_raw" | wc -c)
-    title_len=$((title_len - 1)) 
-
-    local max_content=0
-    for line in "${lines[@]}"; do
-        local stripped=$(strip_ansi "$line")
-        (( ${#stripped} > max_content )) && max_content=${#stripped}
-    done
-
-    local max=$max_content
-    (( title_len > max )) && max=$title_len
-
-    echo -ne "${border_color}╭${reset}"
-    echo -ne "${title}"
-    printf "${border_color}"
-    for ((i=0; i<max-title_len+2; i++)); do printf "─"; done
-    printf "╮${reset}\n"
-
-    for line in "${lines[@]}"; do
-        local stripped=$(strip_ansi "$line")
-
-        printf "${border_color}│${reset} %-${max}s ${border_color}│${reset}\n" "$(printf "%b" "$line")"
-
-
-    done
-
-    printf "${border_color}╰"
-    for ((i=0; i<max+2; i++)); do printf "─"; done
-    printf "╯${reset}\n"
-}
 function advanced_search() {
 
   > "${p}"
@@ -573,7 +688,10 @@ function advanced_search() {
   objects="${1}"
   if [[ -z "${objects}" ]]; then 
     
-    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+    messagebox \
+      -title "Argumentos faltantes" \
+      -message "Esta función requiere de al menos, un argumento" \
+      -type Error
 
     helpPanel
 
@@ -630,7 +748,7 @@ function advanced_search() {
       | select($matched)
       | (to_entries
           | map(
-              if (.key != "ip" and .key != "videoUrl")
+              if (.key != "ip" and .key != "videoUrl" and .key != "nombre" and .key != "ip" and .key != "sistemaOperativo" and .key != "dificultad")
               then .value |= tostring | .value |= highlight_lines(.)
               else .
               end
@@ -650,7 +768,19 @@ function advanced_search() {
   results="$(jq -r '.[].nombre' ${p} | wc -l)"
 
   if [[ ${results} -eq 0 ]]; then  
-    error "Error" "${bold}${bright_white}No se encontraron máquinas para los criterios dados.${end}"
+    local msg=""
+    read -a array <<< "$objects"
+
+    for arg in "${array[@]}"; do 
+      msg+="""
+${icon_color}${icon}${end} ${bold_style}${arg}${end}"""
+    done 
+
+
+    messagebox \
+      -title "Error" \
+      -message "${bold}${bright_white}No se encontraron máquinas para los siguientes criterios: ${msg}${end}" \
+      -type Error
     helpPanel
     rm "${p}" 2>/dev/null 
     exit 1 
@@ -813,7 +943,18 @@ function random_machine() {
 
   if [[ -z "${total}" || "${total}" -eq 0 ]]; then 
 
-    error "Se tenso!" "${bright_white}No se encontraron máquinas para los objetos introducidos.${end}"
+    local msg=""
+    read -a array <<< "$objects"
+
+    for arg in "${array[@]}"; do 
+      msg+="""
+${icon_color}${icon}${end} ${bold_style}${arg}${end}"""
+    done 
+
+    messagebox \
+      -title "Error" \
+      -message "${bold}${bright_white}No se encontraron máquinas para los siguientes criterios: ${msg}${end}" \
+      -type Error
     
     rm "${p}" 2>/dev/null
 
@@ -949,9 +1090,26 @@ function random_machine() {
     local total=$(jq -r '.[].nombre' "${p}" | wc -l 2>/dev/null) 
 
     if [[ -z "${total}" || "${total}" -eq 0 ]]; then 
-      error "Error" "${bright_red}No se encontraron máquinas para los objetos dados!${end}"
-      helpPanel 
+
+      local msg=""
+      read -a array <<< "$objects"
+
+      for arg in "${array[@]}"; do 
+        msg+="""
+  ${icon_color}${icon}${end} ${bold_style}${arg}${end}"""
+      done 
+
+      messagebox \
+        -title "Error" \
+        -message "${bold}${bright_white}No se encontraron máquinas para los siguientes criterios: ${msg}${end}" \
+        -type Error
+      
+      rm "${p}" 2>/dev/null
+
+      helpPanel
+
       exit 1 
+
     fi 
 
     if [[ "${total}" -eq 1 ]]; then 
@@ -993,7 +1151,10 @@ function Get_cert(){
 
   if [[ -z "${certificate}" ]]; then 
     
-    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+    messagebox \
+      -title "Argumentos faltantes" \
+      -message "Esta función requiere de al menos, un argumento" \
+      -type Error
 
     helpPanel
 
@@ -1043,7 +1204,7 @@ function Get_cert(){
 
     [ .tutorials[]
       | (to_entries
-          | map(select(.key != "ip" and .key != "videoUrl"))
+          | map(select(.key == "certificaciones"))
           | map(.value | tostring)
           | join("\n")
         ) as $text
@@ -1072,10 +1233,23 @@ function Get_cert(){
   total="$(jq -r '.[].nombre' ${p} | wc -l 2>/dev/null)"
   
   if [[ "${total}" -eq 0 ]]; then 
-    error "Error" "No se encontraron máquinas para las técnicas dadas."
+
+    local msg=""
+    read -a array <<< "${certificate}"
+
+    for arg in "${array[@]}"; do 
+      msg+="""
+${icon_color}${icon}${end} ${bold_style}${arg}${end}"""
+    done 
+
+    messagebox \
+      -title "Error" \
+      -message "${bold}${bright_white}No se encontraron máquinas para los siguientes criterios: ${msg}${end}" \
+      -type Error
     helpPanel 
     rm "${p}" 2>/dev/null 
     exit 1 
+
   fi 
   
   if [[ "${total}" -eq 1 ]]; then 
@@ -1140,7 +1314,10 @@ function searchSkill(){
 
   if [[ -z "${skill}" ]]; then 
     
-    error "Argumentos faltantes" "Esta función requiere de al menos, un argumento"
+    messagebox \
+      -title "Argumentos faltantes" \
+      -message "Esta función requiere de al menos, un argumento" \
+      -type Error
 
     helpPanel
 
@@ -1191,7 +1368,7 @@ function searchSkill(){
 
     [ .tutorials[]
       | (to_entries
-          | map(select(.key != "ip" and .key != "videoUrl"))
+          | map(select(.key == "tecnicas"))
           | map(.value | tostring)
           | join("\n")
         ) as $text
@@ -1199,7 +1376,7 @@ function searchSkill(){
       | select($matched)
       | (to_entries
           | map(
-              if (.key != "ip" and .key != "videoUrl" and .key != "nombre" and .key != "sistemaOperativo" and .key != "dificultad" and .key != "certificaciones")
+              if(.key == "tecnicas") 
               then .value |= tostring | .value |= highlight_lines(.)
               else .
               end
@@ -1220,11 +1397,25 @@ function searchSkill(){
   total="$(jq -r '.[].nombre' ${p} | wc -l 2>/dev/null)"
   
   if [[ "${total}" -eq 0 ]]; then 
-    error "Error" "No se encontraron máquinas para las técnicas dadas."
+
+    local msg=""
+    read -a array <<< "${skill}"
+
+    for arg in "${array[@]}"; do 
+      msg+="""
+${icon_color}${icon}${end} ${bold_style}${arg}${end}"""
+    done 
+
+    messagebox \
+      -title "Error" \
+      -message "${bold}${bright_white}No se encontraron máquinas para los siguientes criterios: ${msg}${end}" \
+      -type Error
     helpPanel 
     rm "${p}" 2>/dev/null 
     exit 1 
+
   fi 
+
   
   if [[ "${total}" -eq 1 ]]; then 
     machineName=$(jq -r '.[].nombre' ${p})
@@ -1323,7 +1514,10 @@ function validate_preview(){
       true 
       ;; 
     *)
-      error "Parametro invalido" "El parametro de preview solo acepta 4 posibles modos para previsualización, el modo indicado no es valido en este momento."
+      messagebox \
+        -title "Parametro invalido" \
+        -message "El parametro de preview solo acepta 4 posibles modos para previsualización, el modo indicado no es valido en este momento." \
+        -type Error
       helpPanel 
       exit 1 
 
@@ -1331,138 +1525,146 @@ function validate_preview(){
 
 }
 
+function main(){
 
-while [[ $1 ]]; do
-  case $1 in
-    -v|--verbose)
-      verbose_mode=true
-      ;;
-    -y|--yes)
-      confirm_act=true
-      ;;
-    -m|--machine)
-      machineName="$2"
-      ((parameter_counter+=1))
-      shift
-      ;;
-    -u|--update-db)
-      ((parameter_counter+=2))
-      ;;
-    -i|--ip-adress)
-      ip_addr="$2"
-      ((parameter_counter+=3))
-      shift
-      ;;
-    -d|--difficulty)
-      difficulty="$2"
-      ((parameter_counter+=4))
-      ((target_difficulty+=1))
-      shift
-      ;;
-    -o|--os)
-      osSystem="$2"
-      ((parameter_counter+=5))
-      ((target_os+=1))
-      shift
-      ;;
-    -w|--writeup)
-      writeup="$2"
-      ((parameter_counter+=6))
-      shift
-      ;;
-    -c|--cert)
-      certificate="$2"
-      ((parameter_counter+=7))
-      shift
-      ;;
-    -s|--skill)
-      skill="$2"
-      ((parameter_counter+=9))
-      shift
-      ;;
-    -a|--all-machines)
-      ((parameter_counter+=10))
-      ;;
-    --color-matches)
-      color_matches=true
-      ;; 
-    -A|--Advanced-search)
-      objects="$2"
-      ((parameter_counter+=11))
-      shift
-      ;;
-    --recoils)
-      recoils_input="${2:?Missing parameter recoils}"
-      recoils="${recoils_input}"
-      ;;
+  while [[ $1 ]]; do
+    case $1 in
+      -v|--verbose)
+        verbose_mode=true
+        ;;
+      -y|--no-confirm)
+        confirm_act=true
+        ;;
+      -m|--machine)
+        machineName="$2"
+        ((parameter_counter+=1))
+        shift
+        ;;
+      -u|--update-db)
+        ((parameter_counter+=2))
+        ;;
+      -i|--ip-adress)
+        ip_addr="$2"
+        ((parameter_counter+=3))
+        shift
+        ;;
+      -d|--difficulty)
+        difficulty="$2"
+        ((parameter_counter+=4))
+        ((target_difficulty+=1))
+        shift
+        ;;
+      -o|--os)
+        osSystem="$2"
+        ((parameter_counter+=5))
+        ((target_os+=1))
+        shift
+        ;;
+      -w|--writeup)
+        writeup="$2"
+        ((parameter_counter+=6))
+        shift
+        ;;
+      -c|--cert)
+        certificate="$2"
+        ((parameter_counter+=7))
+        shift
+        ;;
+      -s|--skill)
+        skill="$2"
+        ((parameter_counter+=9))
+        shift
+        ;;
+      -a|--all-machines)
+        ((parameter_counter+=10))
+        ;;
+      --color-matches)
+        color_matches=true
+        ;; 
+      -A|--Advanced-search)
+        objects="$2"
+        ((parameter_counter+=11))
+        shift
+        ;;
+      --recoils)
+        recoils_input="${2:?Missing parameter recoils}"
+        recoils="${recoils_input}"
+        ;;
 
-    -r|--random-machine)
-      objects="${2}"
-      ((parameter_counter+=12))
-      ;;
-    --preview|--preview=)
-      prev="${2}"
+      -r|--random-machine)
+        objects="${2}"
+        ((parameter_counter+=12))
+        ;;
+      --preview|--preview=)
+        prev="${2}"
 
-      validate_preview "${prev}"
+        validate_preview "${prev}"
 
-      ;;
-    -h|--help)
-      helpPanel 
-      exit 0
-      ;;
-    -*)
-      error "Parametro invalido" "${bright_red}[!]${bright_white} Parámetro inválido: ${bright_yellow}${1}${end}"
-      helpPanel
-      exit 1
-      ;;
-  esac
-  shift
-done
+        ;;
+      -h|--help)
+        helpPanel 
+        exit 0
+        ;;
+      -*)
+        messagebox -title "Parametro invalido" \
+          -message "El parametro ${bold}${italic_style}${1}${end} no existe en este momento, vuelve a intentarlo mas tarde!" \
+          -type Error
+        helpPanel
+        exit 1 
+        ;;
+    esac
+    shift
+  done
 
 
-if [[ ! -f "$PATH_ARCHIVE" && ! "$parameter_counter" -eq 2 ]]; then
-  error "Dependencias faltantes" "${bright_white}Base de datos ${bold}(${PATH_ARCHIVE})${end}${bright_white} no encontrada, actualiza dependencias para usar el script.${end}"
-  helpPanel
-  exit 1
-elif [[ $parameter_counter -eq 2 ]]; then
-  updatefiles
-  exit 0
-fi
+  if [[ ! -f "$PATH_ARCHIVE" && ! "$parameter_counter" -eq 2 ]]; then
+    messagebox -title "Dependencias faltantes" \
+      -message "${bright_white}Base de datos ${bold}(${PATH_ARCHIVE})${end}${bright_white} no encontrada, actualiza dependencias para usar el script.${end}" \
+      -type Error 
+    helpPanel
+    exit 1
+  elif [[ $parameter_counter -eq 2 ]]; then
+    updatefiles
+    exit 0
+  fi
 
-shopt -s nocasematch
+  shopt -s nocasematch
 
-if [[ $parameter_counter -eq 1 ]]; then
-  searchMachine "$machineName"
+  if [[ $parameter_counter -eq 1 ]]; then
+    searchMachine "$machineName"
 
-elif [[ $parameter_counter -eq 3 ]]; then
-  searchForIp "${ip_addr}"
+  elif [[ $parameter_counter -eq 3 ]]; then
+    searchForIp "${ip_addr}"
 
-elif [[ $parameter_counter -eq 4 ]]; then
-  searchDifficulty "$difficulty"
+  elif [[ $parameter_counter -eq 4 ]]; then
+    searchDifficulty "$difficulty"
 
-elif [[ $parameter_counter -eq 5 ]]; then
-  searchOsSystem "$osSystem"
+  elif [[ $parameter_counter -eq 5 ]]; then
+    searchOsSystem "$osSystem"
 
-elif [[ $parameter_counter -eq 6 ]]; then
-  showLink "$writeup"
+  elif [[ $parameter_counter -eq 6 ]]; then
+    showLink "$writeup"
 
-elif [[ "$parameter_counter" -eq 7 ]]; then
-  Get_cert "$certificate"
+  elif [[ "$parameter_counter" -eq 7 ]]; then
+    Get_cert "$certificate"
 
-elif [[ "$parameter_counter" -eq 9 ]]; then
-  searchSkill "$skill"
+  elif [[ "$parameter_counter" -eq 9 ]]; then
+    searchSkill "$skill"
 
-elif [[ "$parameter_counter" -eq 10 ]]; then
-  get_allMachines
+  elif [[ "$parameter_counter" -eq 10 ]]; then
+    get_allMachines
 
-elif [[ "$parameter_counter" -eq 11 ]]; then
-  advanced_search "$objects"
+  elif [[ "$parameter_counter" -eq 11 ]]; then
+    advanced_search "$objects"
 
-elif [[ "$parameter_counter" -eq 12 ]]; then
-  random_machine "${objects}"
+  elif [[ "$parameter_counter" -eq 12 ]]; then
+    random_machine "${objects}"
 
-else
+  else
 
-  helpPanel
+    helpPanel
 
-fi
+  fi
+}
+
+main "${@}"

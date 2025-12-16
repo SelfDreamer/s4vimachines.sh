@@ -1,10 +1,18 @@
 #!/usr/bin/env python
+
 import re, json, os  
 import requests as rq
 from typing import Final
 from io import StringIO
 import pandas as pd
 import argparse
+from signal import SIGINT, signal
+
+def handler(signal, sigint):
+    exit(1)
+
+signal(SIGINT, handler)
+
 
 s = rq.Session()
 
