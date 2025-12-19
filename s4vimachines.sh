@@ -14,8 +14,13 @@ source ./config/appareance.sh
 # utils 
 source ./utils/ask_yes_no.sh
 source ./utils/messagebox.sh
+source ./utils/chooser.sh
+
+# Variables existentes solo en este script [NUEVO]
+source ./config/lib.sh
 
 [[ ! -d "${DIRECTORY}" ]] && mkdir -p "${DIRECTORY}"
+[[ ! -d "${path_roadmap}" ]] && mkdir -p "${path_roadmap}"
 
 function def_handler(){ 
   exec 3>&-
@@ -83,6 +88,12 @@ function banner(){
 }
 
 function helpPanel(){
+
+  messagebox \
+    -title "HackingVault" \
+    -type Info \
+    -message "${bold}Buscar tutorial de Hacking...${end} ${blink}${pink}█${end}"
+
   content=(
 
     " ${green_water}-m${reset} ${light_blue} --machine${reset} ${opt}MACHINE${reset}                 ${birght_white}Mostrar las propiedades de una ${subrayado}máquina${reset}${birght_white}.${reset}"
@@ -102,6 +113,7 @@ function helpPanel(){
     " ${green_water}-y${reset} ${light_blue} --no-confirm${reset}                      ${birght_white}Saltarse prompts que requieran de confirmación de usuario.${reset}"
     "    ${light_blue} --recoils${reset} ${opt}RECOILS${reset}                 ${birght_white}Definir cuantas iteraciones dara el modo aleatorio para la elección de máquinas.${reset} ${comment}Por defecto seran 100 iteraciones. ${reset}"
     "    ${light_blue} --color-matches${reset}                   ${birght_white}Colorear las lineas donde salgan las palabras clave.${reset} ${comment}Funcion de busqueda avanzada, por certificado o skill${reset}"
+    "    ${light_blue} --roadmap ${reset}${opt}CERT ${reset}                   ${birght_white}Generar un ${subrayado}roadmap${reset}${birght_white} interactivo de una certificación dada. ${comment}Aún en desarrollo${reset}"
     " ${green_water}-h${reset} ${light_blue} --help${reset}                            ${birght_white}Mostrar este mensaje y salir.${reset}"
   )
 
@@ -154,8 +166,10 @@ function searchMachine(){
     exit 1 
   fi
 
-  if [[ "${machineName}" == "%{random}%" ]]; then 
-    machineName=$(jq -r '.tutorials[]["nombre"]' < "${PATH_ARCHIVE}" | shuf -n1) 
+  if [[ "${machineName}" =~ ^%\{([a-z]+)\}%$ ]]; then 
+
+    cmd="bash -c '${!BASH_REMATCH[1]}'"
+    machineName=$(printf "%s" "${cmd}" | bash)
   fi 
 
   results=$(jq -r --arg icon_color "${icon_color}" --arg name "${machineName}" --arg icon "${icon}" --arg blue "${bright_blue}" --arg end "${end}" --arg bright_cyan "${bright_cyan}" --arg bright_magenta "${bright_magenta}" --arg bright_white "${bright_white}" '
@@ -494,15 +508,22 @@ function showLink(){
             ownerChannelName, 
             ownerProfileUrl, 
             likeCount,
-            lengthSeconds
+            lengthSeconds,
+            thumbnail
           }') 
 
+
   local tty_largo=$(stty size | awk '{print $2}')
-  
   title=$(jq -r '.title["simpleText"]' <<< "${data}")
   creator=$(jq -r '.ownerChannelName' <<< "${data}")
   ownerProfileUrl=$(jq -r '.ownerProfileUrl' <<< "${data}")
   likeCount=$(jq -r '.likeCount' <<< "${data}")
+  thumbnail=$(jq -r '.thumbnail.thumbnails[0].url' <<< "${data}")
+    
+  write_rule_markdown; echo
+  
+
+  curl -s -X GET "${thumbnail}" -L | kitty +kitten icat
   description=$(jq -r '.description.simpleText' <<< "${data}")
   description=$(
     printf "%b\n" "$description" |
@@ -802,6 +823,9 @@ ${icon_color}${icon}${end} ${bold_style}${arg}${end}"""
     b='enter:execute(./.process_machine.sh ${1})+abort'
 
   fi 
+
+  tty_ancho=$(stty size | awk '{print $1}')
+  tty_ancho=$((tty_ancho - 2))
 
   jq -r --arg white "${bright_white}" '
    .[] |
@@ -1525,6 +1549,115 @@ function validate_preview(){
 
 }
 
+function gen_roadmap(){
+  cert_to_roadmap="${1}"
+  local preffix="▌"
+
+  
+  [[ -z "${cert_to_roadmap}" ]] && messagebox \
+    -type Error \
+    -title "Error" \
+    -message "Esta función requiere de un argumento, el cual no se recibio." && helpPanel && exit 1 
+
+
+  certs=$(jq -r '.tutorials[].certificaciones' < ${PATH_ARCHIVE} | sort -u | grep -v "(")
+
+  result=$(grep -Pi "^${cert_to_roadmap}$" <<< "${certs}") 
+
+  if [[ -z "${result}" ]]; then 
+    
+    local cert_content
+    local message 
+    IFS=$'\n'
+    for cert in ${certs}; do 
+      cert_content+="""${icon_color}${icon}${end} ${bold_style}${cert}${end}
+"""
+    done 
+    msg="""No se encontro la certificación indicada: \"${bold_style}${italic_style}${cert_to_roadmap}${end}\".
+Actualmente solo contamos con estas certificaciones:${end}
+${cert_content}
+"""
+    messagebox \
+      -type Error \
+      -title "Error" \
+      -message "${msg}"
+
+    exit 1  
+
+  fi 
+  
+  jq_result=$(jq -r --arg cert_to_roadmap "${cert_to_roadmap}" '
+    [ 
+      .tutorials[] | 
+        select(.certificaciones | test("^\\s*\($cert_to_roadmap)\\s*$"; "i")) 
+    ] 
+    | sort_by(
+        .dificultad as $d | 
+        ["Fácil", "Media", "Difícil", "Insane"] | index($d)
+      )[]
+      ' < "${PATH_ARCHIVE}")
+
+  if [[ -z "${jq_result}" ]]; then 
+    messagebox \
+      -title "Error" \
+      -type Error \
+      -message "No se pudo generar un roadmap para la certificación ${cert_to_roadmap}, intentalo de nuevo mas tarde."
+    exit 1 
+  fi 
+ 
+  # Verificamos que el roadmap exista
+  roadmap_file="${path_roadmap}/${cert_to_roadmap,,}.json"
+  
+  if [[ ! -f "${roadmap_file}" ]]; then 
+    
+    echo -e "${bright_magenta}${preffix} Generando roadmap para la certificación ${cert_to_roadmap}.${end}"
+    jq -r '{nombre, resuelta: (.resuelta // "No")}' <<< "${jq_result}"> "${roadmap_file}" 2>/dev/null 
+
+    if [[ $? -eq 0 ]]; then 
+      echo -e "${bright_magenta}${preffix} Roadmap generado en ${roadmap_file}${end}"
+    else 
+      echo -e "${bright_red}${preffix} Fallo al intentar generar el roadmap.${end}"
+      exit 1 
+    fi 
+  fi 
+
+  machines=$(jq -r '.nombre' "${roadmap_file}")
+  
+  machines=$(echo "${machines}" | tr '\n' ',')
+
+  selected_machines=$(jq -r '. | select(.resuelta == "Si") | .nombre' "${roadmap_file}")
+
+  selected_machines=$(echo "${selected_machines}" | tr '\n' ',')
+
+  total_machine=$(jq -r '.nombre' ${roadmap_file} | wc -l)
+  total_solved=$(jq -r '. | select(.resuelta == "Si") | .nombre' ${roadmap_file} | wc -l)
+
+  local d="${total_solved}/${total_machine}"
+  
+  clear 
+  machines=$( \
+    chooser \
+    --no-limit \
+    -options "${machines}" \
+    -header "\u001b[1;35m${preffix} Roadmap para la certificación ${cert_to_roadmap} (${d}):\033[0m\n${comment}${preffix}x toggle • ↓↑ navigate • enter submit • ctrl+a select all${reset}\n"  \
+    -selected "${selected_machines}" \
+    -blink-cursor 
+  )
+
+  machines=$(echo "${machines}" | tr '\n' ' ')
+
+jq -c --arg targets "${machines}" '
+  ($targets | split(" ")) as $whitelist |
+
+  .resuelta = if (.nombre | IN($whitelist[])) then "Si" else "No" end
+' "${roadmap_file}" | sponge "${roadmap_file}"
+
+exit 0 
+
+
+
+}
+
 function main(){
 
   while [[ $1 ]]; do
@@ -1601,7 +1734,12 @@ function main(){
         validate_preview "${prev}"
 
         ;;
-      -h|--help)
+      --roadmap)
+        cert_to_roadmap="${2}"
+        ((parameter_counter+=13))
+        shift 
+        ;;
+        -h|--help)
         helpPanel 
         exit 0
         ;;
@@ -1659,6 +1797,10 @@ function main(){
 
   elif [[ "$parameter_counter" -eq 12 ]]; then
     random_machine "${objects}"
+
+  elif [[ "${parameter_counter}" -eq 13 ]]; then 
+
+    gen_roadmap "${cert_to_roadmap}"
 
   else
 

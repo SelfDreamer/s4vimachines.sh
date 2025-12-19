@@ -34,3 +34,5 @@ birght_white="\u001b[0;97m"
 comment="\u001b[38;2;95;95;95m"
 subrayado="\033[4m"
 
+# PATH ROADMAP 
+path_roadmap="${PATH_ARCHIVE%/*}/s4vi_roadmap"
