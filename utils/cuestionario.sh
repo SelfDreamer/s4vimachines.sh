@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Variables Globales
+
 declare -a QUESTIONS
 declare -a OPTIONS_LIST 
 declare -a USER_ANSWERS  
@@ -9,7 +9,6 @@ declare -a CURRENT_HOVER
 CURRENT_Q_INDEX=0
 TOTAL_QUESTIONS=0
 
-# Colores y Estilos
 C_PURPLE="\033[38;5;212m"
 C_MAGENTA="\033[0;95m"
 C_GREEN="\033[32m"
@@ -25,31 +24,27 @@ ICON_UNCHECKED="○"
 ICON_CURSOR="➜"
 
 setup_terminal() {
-    tput civis      # Ocultar cursor
-    stty -echo      # Desactivar echo
+    tput civis      
+    stty -echo      
 }
 
 restore_terminal() {
-    tput cnorm      # Mostrar cursor
-    stty echo       # Activar echo
+    tput cnorm      
+    stty echo       
     echo -e "${C_RESET}"
 }
 
 trap restore_terminal EXIT INT TERM
 
-# --- Dibujado ---
-
 draw_header() {
     local title="${QUESTIONS[$CURRENT_Q_INDEX]}"
     
-    # Dibujar la caja superior
+
     echo -e "${C_MAGENTA}┌──────────────────────────────────────────────┐${C_RESET}\033[K"
-    # Usamos printf con un ancho fijo para limpiar dentro de la caja si cambiara
+
     printf "${C_MAGENTA}│ PREGUNTA %d/%d : %-29s │${C_RESET}\033[K\n" "$((CURRENT_Q_INDEX + 1))" "$TOTAL_QUESTIONS" "..."
     echo -e "${C_MAGENTA}└──────────────────────────────────────────────┘${C_RESET}\033[K"
     
-    # AQUÍ ESTABA EL ERROR: Añadimos \033[K al final del título
-    # Esto borra cualquier residuo de texto de la pregunta anterior
     echo -e "${C_WHITE}${title}${C_RESET}\033[K\n"
 }
 
@@ -60,8 +55,6 @@ draw_options() {
     local hover_idx=${CURRENT_HOVER[$CURRENT_Q_INDEX]}
     local selected_idx=${USER_ANSWERS[$CURRENT_Q_INDEX]}
 
-    # Definir una altura fija para el área de opciones (ej. 6 líneas)
-    # Esto evita que opciones de preguntas anteriores queden abajo
     local MAX_LINES_TO_CLEAR=6 
     
     for i in "${!opts_array[@]}"; do
@@ -85,11 +78,10 @@ draw_options() {
             fi
         fi
 
-        # \033[K al final de cada opción para limpiar residuos
+
         printf "${cursor_ptr}${style}%s %s${C_RESET}\033[K\n" "$icon" "$opt_text"
     done
     
-    # Limpiar líneas sobrantes si la pregunta actual tiene menos opciones que la anterior
     local current_lines=${#opts_array[@]}
     for ((l=current_lines; l<MAX_LINES_TO_CLEAR; l++)); do 
         echo -e "\033[K" 
@@ -111,12 +103,12 @@ draw_pagination() {
         fi
     done
     
-    # \033[K al final de la paginación
+
     echo -e "$line\033[K"
     echo -e "${C_GREY}x: Seleccionar • Enter: Siguiente • ←/→: Preguntas • q: Salir${C_RESET}\033[K"
 }
 
-# --- Motor Principal ---
+
 
 run_quiz() {
     setup_terminal
