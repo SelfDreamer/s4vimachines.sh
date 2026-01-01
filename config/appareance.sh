@@ -14,3 +14,6 @@ italic_style="\u001b[3m"
 underline_style="\033[4m"
 bold_style="\u001b[1m"
 
+# From write script writed in **go**.
+width=0
+height=20

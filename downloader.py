@@ -62,7 +62,7 @@ def transform_rows(rows: list[dict]) -> list[dict]:
                 continue
         
             if isinstance(v, str):
-                v = v.lstrip("\n")
+                v = "\n".join([line.strip() for line in v.split("\n") if line.strip()])
 
 
             if k in KEY_MAP:

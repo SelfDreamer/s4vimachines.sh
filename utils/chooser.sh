@@ -168,22 +168,71 @@ function chooser(){
         echo -ne "\033[${LINES_TO_CLEAR}A" >&2
     done
 
-    if [ "$MULTI_SELECT" = true ]; then
-        for ((i=0; i<TOTAL_OPTIONS; i++)); do
-            if [ "${CHECKED_STATUS[$i]}" -eq 1 ]; then echo "${OPTIONS[$i]}"; fi
-        done
-    else
-        printf "%b\n" "${OPTIONS[$SELECTED]}"
-    fi
+      if [ "$MULTI_SELECT" = true ]; then
+          local str_pending=""
+          local str_selected=""
+          local str_unselected=""
+
+          for ((i=0; i<TOTAL_OPTIONS; i++)); do
+              if [ "${CHECKED_STATUS[$i]}" -eq 2 ]; then
+                  if [ -n "$str_pending" ]; then str_pending="${str_pending}, "; fi
+                  str_pending+="${OPTIONS[$i]}"
+
+              elif [ "${CHECKED_STATUS[$i]}" -eq 1 ]; then
+                  if [ -n "$str_selected" ]; then str_selected="${str_selected}, "; fi
+                  str_selected+="${OPTIONS[$i]}"
+
+              else
+                  if [ -n "$str_unselected" ]; then str_unselected="${str_unselected}, "; fi
+                  str_unselected+="${OPTIONS[$i]}"
+              fi
+          done
+
+          echo "${str_pending} | ${str_selected} | ${str_unselected}"
+      else
+          printf "%b\n" "${OPTIONS[$SELECTED]}"
+      fi
 }
 
+function getoutput() {
+    local raw_input="$1"
+    local target="${2,,}" 
+    target=$(echo "$target" | xargs)
+
+    if [[ -z "$raw_input" ]]; then
+        echo "Error: No se pasó data a getoutput (Argumento \$1 vacío)" >&2
+        return 1
+    fi
+
+    IFS='|' read -r val_pending val_selected val_unselected <<< "$raw_input"
+
+    local result=""
+
+    case "$target" in
+        *pending*|p)       
+            result="$val_pending"
+            ;;
+        *unselected*|u)   
+            result="$val_unselected"
+            ;;
+        *selected*|s)      
+            result="$val_selected"
+            ;;
+        *)
+            echo "Error: Flag '$target' no reconocida. Usa: 'selected', 'pending' o 'unselected'." >&2
+            echo "Valores disponibles -> P: $val_pending | S: $val_selected | U: $val_unselected" >&2
+            return 1
+            ;;
+    esac
+
+    echo "$result" | xargs
+}
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then 
     
     OUTPUT=$(chooser --no-limit \
         -options "Docker, Kubernetes, Terraform, Ansible, Jenkins, AWS CLI" \
         -selected "Docker" \
         -selected-pending "Ansible, Jenkins" \
-        -cursor "> " \
         -header "\u001b[1;35mSelecciona las herramientas DevOps:\033[0m\n(x: seleccionar, d: pendiente)" \
         -color-selected "\033[38;5;212m" \
         -unselected-prefix "󰄱 " \
@@ -193,5 +242,12 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
         -blink-cursor
       )
 
-    echo -e "\nResultado final:\n$OUTPUT"
+      selected=$(getoutput "${OUTPUT}" -selected)
+      unselected=$(getoutput "${OUTPUT}" -unselected)
+      pending=$(getoutput "${OUTPUT}" -pending)
+
+      echo "Valores seleccionados: ${selected}"
+      echo "Valores no seleccionados: ${unselected}"
+      echo "Valores pendientes: ${pending}"
+
 fi

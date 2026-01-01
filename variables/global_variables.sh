@@ -36,3 +36,4 @@ subrayado="\033[4m"
 
 # PATH ROADMAP 
 path_roadmap="${PATH_ARCHIVE%/*}/s4vi_roadmap"
+take_note=false

@@ -15,6 +15,7 @@ source ./config/appareance.sh
 source ./utils/ask_yes_no.sh
 source ./utils/messagebox.sh
 source ./utils/chooser.sh
+source ./utils/markdown.sh
 
 # Variables existentes solo en este script [NUEVO]
 source ./config/lib.sh
@@ -90,9 +91,10 @@ function banner(){
 function helpPanel(){
 
   messagebox \
-    -title "HackingVault" \
+    -title " HackingVault " \
     -type Info \
-    -message "${bold}Buscar tutorial de Hacking...${end} ${blink}${pink}█${end}"
+    -message "${bold}Buscar tutorial de Hacking...${end} ${blink}${pink}█${end}" \
+    -no-preffix
 
   content=(
 
@@ -114,6 +116,7 @@ function helpPanel(){
     "    ${light_blue} --recoils${reset} ${opt}RECOILS${reset}                 ${birght_white}Definir cuantas iteraciones dara el modo aleatorio para la elección de máquinas.${reset} ${comment}Por defecto seran 100 iteraciones. ${reset}"
     "    ${light_blue} --color-matches${reset}                   ${birght_white}Colorear las lineas donde salgan las palabras clave.${reset} ${comment}Funcion de busqueda avanzada, por certificado o skill${reset}"
     "    ${light_blue} --roadmap ${reset}${opt}CERT ${reset}                   ${birght_white}Generar un ${subrayado}roadmap${reset}${birght_white} interactivo de una certificación dada. ${comment}Aún en desarrollo${reset}"
+    "    ${light_blue} --take-note ${reset}                      ${birght_white}Realizar notas sobre la cierta máquina que te toque en el roadmap generado.${reset}"
     " ${green_water}-h${reset} ${light_blue} --help${reset}                            ${birght_white}Mostrar este mensaje y salir.${reset}"
   )
 
@@ -520,10 +523,10 @@ function showLink(){
   likeCount=$(jq -r '.likeCount' <<< "${data}")
   thumbnail=$(jq -r '.thumbnail.thumbnails[0].url' <<< "${data}")
     
-  write_rule_markdown; echo
+  #write_rule_markdown; echo
   
 
-  curl -s -X GET "${thumbnail}" -L | kitty +kitten icat
+  #curl -s -X GET "${thumbnail}" -L | kitty +kitten icat
   description=$(jq -r '.description.simpleText' <<< "${data}")
   description=$(
     printf "%b\n" "$description" |
@@ -1553,37 +1556,29 @@ function gen_roadmap(){
   cert_to_roadmap="${1}"
   local preffix="▌"
 
-  
   [[ -z "${cert_to_roadmap}" ]] && messagebox \
     -type Error \
     -title "Error" \
-    -message "Esta función requiere de un argumento, el cual no se recibio." && helpPanel && exit 1 
+    -message "Esta función requiere de un argumento, el cual no se recibió." && helpPanel && exit 1 
 
-
-  certs=$(jq -r '.tutorials[].certificaciones' < ${PATH_ARCHIVE} | sort -u | grep -v "(")
+  certs=$(jq -r '.tutorials[].certificaciones' < "${PATH_ARCHIVE}" | sort -u | grep -v "(")
 
   result=$(grep -Pi "^${cert_to_roadmap}$" <<< "${certs}") 
 
   if [[ -z "${result}" ]]; then 
-    
-    local cert_content
+    local cert_content=""
     local message 
     IFS=$'\n'
     for cert in ${certs}; do 
       cert_content+="""${icon_color}${icon}${end} ${bold_style}${cert}${end}
 """
     done 
-    msg="""No se encontro la certificación indicada: \"${bold_style}${italic_style}${cert_to_roadmap}${end}\".
+    msg="""No se encontró la certificación indicada: \"${bold_style}${italic_style}${cert_to_roadmap}${end}\".
 Actualmente solo contamos con estas certificaciones:${end}
 ${cert_content}
 """
-    messagebox \
-      -type Error \
-      -title "Error" \
-      -message "${msg}"
-
+    messagebox -type Error -title "Error" -message "${msg}"
     exit 1  
-
   fi 
   
   jq_result=$(jq -r --arg cert_to_roadmap "${cert_to_roadmap}" '
@@ -1598,20 +1593,22 @@ ${cert_content}
       ' < "${PATH_ARCHIVE}")
 
   if [[ -z "${jq_result}" ]]; then 
-    messagebox \
-      -title "Error" \
-      -type Error \
-      -message "No se pudo generar un roadmap para la certificación ${cert_to_roadmap}, intentalo de nuevo mas tarde."
+    messagebox -title "Error" -type Error -message "No se pudo generar un roadmap para ${cert_to_roadmap}."
     exit 1 
   fi 
- 
-  # Verificamos que el roadmap exista
+
   roadmap_file="${path_roadmap}/${cert_to_roadmap,,}.json"
-  
+
   if [[ ! -f "${roadmap_file}" ]]; then 
-    
     echo -e "${bright_magenta}${preffix} Generando roadmap para la certificación ${cert_to_roadmap}.${end}"
-    jq -r '{nombre, resuelta: (.resuelta // "No")}' <<< "${jq_result}"> "${roadmap_file}" 2>/dev/null 
+    
+    jq -c -r '
+    {
+      nombre, 
+      resuelta: (.resuelta // "No"), 
+      notas: (.nota // "")
+    }
+    ' <<< "${jq_result}" > "${roadmap_file}" 2>/dev/null 
 
     if [[ $? -eq 0 ]]; then 
       echo -e "${bright_magenta}${preffix} Roadmap generado en ${roadmap_file}${end}"
@@ -1621,17 +1618,48 @@ ${cert_content}
     fi 
   fi 
 
-  machines=$(jq -r '.nombre' "${roadmap_file}")
-  
-  machines=$(echo "${machines}" | tr '\n' ',')
+  if [[ "${take_note}" == true ]]; then 
+    
+    machines=$(jq -r '.nombre' "${roadmap_file}" | tr '\n' ',')
+    machine=$(chooser -options "${machines}" -header "\u001b[1;35m${preffix} Elige la máquina para tomar apuntes:${end}\n${comment}${preffix} Enter para seleccionar.${reset}\n")
+    clear
 
-  selected_machines=$(jq -r '. | select(.resuelta == "Si") | .nombre' "${roadmap_file}")
+    jq_machine=$(jq -r "select(.nombre == \"${machine}\")" "${roadmap_file}")
+    default_note=$(jq -r '.notas // empty' <<< "${jq_machine}")
+    
+    note=$(./utils/write -value "${default_note}" -placeholder "Introduce tu nota..." --width "${width}" --height "${height}")
+    
+    if [[ -n "$note" ]]; then
+        tmp_json=$(mktemp)
+        jq -c --arg m "$machine" --arg n "$note" \
+           'if .nombre == $m then .notas = $n else . end' \
+           "${roadmap_file}" > "$tmp_json"
+        
+        mv "$tmp_json" "${roadmap_file}"
+        clear
+        echo -e "\n${bright_magenta}${preffix} La nota de la máquina '${machine}' se guardo correctamente.${end}"
 
-  selected_machines=$(echo "${selected_machines}" | tr '\n' ',')
+        yes_no=$(ask_yes_no -message "¿Deseas mostrar la nota en formato markdown?" -options "Si,No")
+        clear
 
-  total_machine=$(jq -r '.nombre' ${roadmap_file} | wc -l)
-  total_solved=$(jq -r '. | select(.resuelta == "Si") | .nombre' ${roadmap_file} | wc -l)
+        if [[ "${yes_no}" == "Si" ]]; then 
+          markdown_render --code-block-expand --line-numbers-code-block "${note}"
+        fi 
 
+    else
+        clear
+        echo -e "\n${bright_red}${preffix} Nota vacía, no se guardaron cambios.${end}"
+    fi
+
+    exit 0 
+  fi 
+
+  machines=$(jq -r '.nombre' "${roadmap_file}" | tr '\n' ',')
+  selected_machines=$(jq -r 'select(.resuelta == "Si") | .nombre' "${roadmap_file}" | tr '\n' ',')
+  pending_machines=$(jq -r 'select(.resuelta == "Pendiente") | .nombre' "${roadmap_file}" | tr "\n" ",")
+
+  total_machine=$(jq -r '.nombre' "${roadmap_file}" | wc -l)
+  total_solved=$(jq -r 'select(.resuelta == "Si") | .nombre' "${roadmap_file}" | wc -l)
   local d="${total_solved}/${total_machine}"
   
   clear 
@@ -1639,25 +1667,41 @@ ${cert_content}
     chooser \
     --no-limit \
     -options "${machines}" \
-    -header "\u001b[1;35m${preffix} Roadmap para la certificación ${cert_to_roadmap} (${d}):\033[0m\n${comment}${preffix}x toggle • ↓↑ navigate • enter submit • ctrl+a select all${reset}\n"  \
+    -header "\u001b[1;35m${preffix} Roadmap: ${cert_to_roadmap} (${d}):\033[0m\n${comment}${preffix} x marcar • d pendiente • enter guardar • ctrl+a todo${reset}\n"  \
     -selected "${selected_machines}" \
-    -blink-cursor 
+    -cursor "${preffix} " \
+    -selected-pending "${pending_machines}" \
+    -unselected-prefix "󰄱 " \
+    -selected-prefix "󰱒 " \
+    -pending-prefix "󰥔 " \
   )
+  
+  selected_out=$(getoutput "${machines}" -selected)
+  unselected_out=$(getoutput "${machines}" -unselected)
+  pending=$(getoutput "${machines}" -pending)
 
-  machines=$(echo "${machines}" | tr '\n' ' ')
+  jq -c \
+    --arg s "${selected_out}" \
+    --arg p "${pending}" \
+    --arg u "${unselected_out}" '
 
-jq -c --arg targets "${machines}" '
-  ($targets | split(" ")) as $whitelist |
+    def trim: sub("^\\s+";"") | sub("\\s+$";"");
 
-  .resuelta = if (.nombre | IN($whitelist[])) then "Si" else "No" end
-' "${roadmap_file}" | sponge "${roadmap_file}"
+    ($s | split(",") | map(trim)) as $yes_arr |
+    ($p | split(",") | map(trim)) as $pending_arr |
+    ($u | split(",") | map(trim)) as $no_arr |
 
-exit 0 
+    (
+      {} 
+      + (reduce $no_arr[]      as $item ({}; . + {($item): "No"}))
+      + (reduce $pending_arr[] as $item ({}; . + {($item): "Pendiente"}))
+      + (reduce $yes_arr[]     as $item ({}; . + {($item): "Si"}))
+    ) as $status_map |
 
+    .resuelta = ($status_map[.nombre] // .resuelta)
 
-
+  ' "${roadmap_file}" | sponge "${roadmap_file}" 
 }
-
 function main(){
 
   while [[ $1 ]]; do
@@ -1743,6 +1787,11 @@ function main(){
         helpPanel 
         exit 0
         ;;
+
+      --take-note)
+        take_note=true 
+        shift 
+        ;; 
       -*)
         messagebox -title "Parametro invalido" \
           -message "El parametro ${bold}${italic_style}${1}${end} no existe en este momento, vuelve a intentarlo mas tarde!" \
